@@ -1,15 +1,14 @@
 "use client"
 
 import { useState } from "react"
-import MapInteractivePlaceholder from "@/components/home/map-interactive-placeholder"
-import type { SectorPolygon } from "@/components/home/types" // Asumiendo que moviste los tipos
+import GoogleMapComponent from "@/components/home/google-map"
 import ToolsFab from "@/components/home/tools-fab"
 import ToolsPanelSheet from "@/components/home/tools-panel-sheet"
 import MapLegendDisplay from "@/components/home/map-legend-display"
 import SectorDetailsDialog from "@/components/home/sector-details-dialog"
 import NewSectorFormDialog from "@/components/home/new-sector-form-dialog"
 
-const sampleSectors: SectorPolygon[] = [
+const sampleSectors = [
   {
     id: "1",
     name: "Sector Centro",
@@ -61,11 +60,11 @@ const sampleSectors: SectorPolygon[] = [
 
 export default function HomeView() {
   const [isToolsPanelOpen, setIsToolsPanelOpen] = useState(false)
-  const [selectedSector, setSelectedSector] = useState<SectorPolygon | null>(null)
+  const [selectedSector, setSelectedSector] = useState(null)
   const [isNewSectorModalOpen, setIsNewSectorModalOpen] = useState(false)
-  const [sectors, setSectors] = useState<SectorPolygon[]>(sampleSectors)
+  const [sectors, setSectors] = useState(sampleSectors)
 
-  const handlePolygonClick = (sector: SectorPolygon) => {
+  const handlePolygonClick = (sector: any) => {
     setSelectedSector(sector)
   }
 
@@ -73,7 +72,7 @@ export default function HomeView() {
     setIsNewSectorModalOpen(true)
   }
 
-  const handleCreateNewSector = (newSectorData: Omit<SectorPolygon, "id" | "path">) => {
+  const handleCreateNewSector = (newSectorData: any) => {
     const newId = String(Date.now())
     // Simulación de path para el nuevo sector. En la app real, esto vendría del dibujo del usuario.
     const newPath = [
@@ -82,7 +81,7 @@ export default function HomeView() {
       { lng: -58.386 + (Math.random() - 0.5) * 0.01, lat: -34.607 + (Math.random() - 0.5) * 0.01 },
       { lng: -58.387 + (Math.random() - 0.5) * 0.01, lat: -34.6055 + (Math.random() - 0.5) * 0.01 },
     ]
-    const newSector: SectorPolygon = {
+    const newSector = {
       ...newSectorData,
       id: newId,
       path: [...newPath, newPath[0]], // Cerrar el polígono
@@ -94,7 +93,7 @@ export default function HomeView() {
 
   return (
     <div className="relative h-[calc(100vh-120px)] flex flex-col">
-      <MapInteractivePlaceholder sectors={sectors} onPolygonClick={handlePolygonClick} />
+      <GoogleMapComponent />
       <MapLegendDisplay />
       <ToolsFab onOpenTools={() => setIsToolsPanelOpen(true)} />
       <ToolsPanelSheet
