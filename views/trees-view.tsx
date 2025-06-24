@@ -7,36 +7,7 @@ import { PlusCircle, Upload, Download } from "lucide-react"
 import StreetSectionView from "@/components/trees/street-section-view"
 import IndividualTreeView from "@/components/trees/individual-tree-view"
 import AddTreeModal from "@/components/trees/add-tree-modal"
-
-// Tipos de datos para árboles
-export interface TreeSection {
-  id: string
-  addressRange: string // e.g., "100-199", "200-299"
-  sidewalkSide: "Norte" | "Sur" | "Este" | "Oeste" | "Ambas"
-  predominantSpecies: string
-  treeCount: number
-  generalStatus: "Bueno" | "Regular" | "Malo" | "Necesita Intervención"
-}
-
-export interface StreetWithSections {
-  id: string
-  name: string
-  sections: TreeSection[]
-}
-
-export type TreeStatus = "Sano" | "Enfermo" | "Necesita Poda" | "Seco" | "Recién Plantado"
-
-export interface IndividualTree {
-  id: string
-  species: string
-  status: TreeStatus
-  streetName: string
-  streetNumber: string // o altura
-  location?: { lat: number; lng: number } // Opcional para mapa
-  plantingDate?: string
-  lastPruningDate?: string
-  observations?: string
-}
+import type { TreeSection, StreetWithSections, IndividualTree } from "@/src/types"
 
 // Datos de ejemplo
 const sampleStreets: StreetWithSections[] = [

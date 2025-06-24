@@ -34,7 +34,7 @@ export interface Task {
 
 // Tipos de Arbolado
 export type SidewalkSide = "Norte" | "Sur" | "Este" | "Oeste" | "Ambas" | "Ninguna"
-export type TreeStatus = "Sano" | "Enfermo" | "Necesita Poda" | "Seco" | "Recién Plantado"
+export type TreeStatus = "Sano" | "Enfermo" | "Necesita Poda" | "Seco" | "Recién Plantado" | "Malo"
 
 export interface TreeSection {
   id: string

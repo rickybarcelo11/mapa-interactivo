@@ -1,4 +1,4 @@
-import type { Worker } from "@/types"
+import type { Worker } from "../types"
 
 export const workersData: Worker[] = [
   { id: "w1", name: "Juan Pérez", observaciones: "Experto en poda de altura." },

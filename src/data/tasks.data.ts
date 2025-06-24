@@ -1,4 +1,4 @@
-import type { Task } from "@/types"
+import type { Task } from "../types"
 
 // Una única fuente de verdad para todas las tareas de ejemplo
 export const tasksData: Task[] = [

@@ -6,7 +6,9 @@ import { Button } from "@/components/ui/button"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { MoreHorizontal, Edit, Trash2, ChevronDown, ChevronRight } from "lucide-react"
 import WorkerDetailsAccordion from "./worker-details-accordion"
-import type { Worker, Task } from "@/views/workers-view" // Ajusta la ruta si es necesario
+import type { Worker, Task } from "@/src/types/index" // Ajusta la ruta si es necesario
+import React from "react"
+import ConfirmDeleteDialog from "../tasks/confirm-delete-dialog"
 
 interface WorkersTableProps {
   workers: Worker[]
@@ -39,7 +41,7 @@ export default function WorkersTable({ workers, workerTasks, onEdit, onDelete }:
         </TableHeader>
         <TableBody>
           {workers.map((worker) => (
-            <>
+            <React.Fragment key={worker.id}>
               <TableRow
                 key={worker.id}
                 className="border-b border-slate-700 data-[state=selected]:bg-slate-750"
@@ -88,7 +90,7 @@ export default function WorkersTable({ workers, workerTasks, onEdit, onDelete }:
                   </TableCell>
                 </TableRow>
               )}
-            </>
+            </React.Fragment>
           ))}
         </TableBody>
       </Table>

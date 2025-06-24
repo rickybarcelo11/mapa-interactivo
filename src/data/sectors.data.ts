@@ -1,4 +1,4 @@
-import type { SectorPolygon } from "@/types"
+import type { SectorPolygon } from "../types"
 
 export const sectorsData: SectorPolygon[] = [
   {

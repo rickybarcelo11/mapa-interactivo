@@ -4,8 +4,9 @@ import { useState } from "react"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Badge } from "@/components/ui/badge"
 import SectorRowDetails from "./sector-row-details"
-import type { SectorPolygon, SectorStatus } from "@/components/home/map-interactive-placeholder"
+import type { SectorPolygon, SectorStatus } from "@/src/types"
 import { ChevronDown, ChevronRight } from "lucide-react"
+import React from "react"
 
 interface SectorsTableProps {
   sectors: SectorPolygon[]
@@ -47,7 +48,7 @@ export default function SectorsTable({ sectors }: SectorsTableProps) {
         </TableHeader>
         <TableBody>
           {sectors.map((sector) => (
-            <>
+            <React.Fragment key={sector.id}>
               <TableRow
                 key={sector.id}
                 onClick={() => toggleRow(sector.id)}
@@ -85,7 +86,7 @@ export default function SectorsTable({ sectors }: SectorsTableProps) {
                   </TableCell>
                 </TableRow>
               )}
-            </>
+            </React.Fragment>
           ))}
         </TableBody>
       </Table>

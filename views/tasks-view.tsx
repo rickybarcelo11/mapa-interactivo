@@ -4,11 +4,11 @@ import { useState, useEffect } from "react"
 import TasksFilters from "@/components/tasks/tasks-filters"
 import TasksTable from "@/components/tasks/tasks-table"
 import EditTaskModal from "@/components/tasks/edit-task-modal"
-import type { Task, Worker, SectorStatus } from "@/types"
+import type { Task, Worker, SectorStatus } from "@/src/types"
 
 // Importamos los datos simulados
-import { tasksData } from "@/data/tasks.data"
-import { workersData } from "@/data/workers.data"
+import { tasksData } from "@/src/data/tasks.data"
+import { workersData } from "@/src/data/workers.data"
 
 export default function TasksView() {
   const [allTasks, setAllTasks] = useState<Task[]>([])

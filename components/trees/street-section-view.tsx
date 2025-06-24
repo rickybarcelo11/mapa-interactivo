@@ -3,8 +3,9 @@
 import { useState } from "react"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { ChevronDown, ChevronRight } from "lucide-react"
-import type { StreetWithSections, TreeSection } from "@/views/trees-view" // Asegúrate que la ruta es correcta
-import { getConsolidatedValue, getStreetOrientation } from "@/utils"
+import type { StreetWithSections, TreeSection } from "../../src/types"
+import { getConsolidatedValue, getStreetOrientation } from "../../src/utils"
+import React from "react"
 
 interface StreetSectionViewProps {
   streets: StreetWithSections[]
@@ -54,7 +55,7 @@ export default function StreetSectionView({ streets }: StreetSectionViewProps) {
             const streetOrientation = getStreetOrientation(street.sections)
 
             return (
-              <>
+              <React.Fragment key={street.id}>
                 <TableRow
                   key={street.id}
                   onClick={() => toggleStreet(street.id)}
@@ -193,7 +194,7 @@ export default function StreetSectionView({ streets }: StreetSectionViewProps) {
                     </TableCell>
                   </TableRow>
                 )}
-              </>
+              </React.Fragment>
             )
           })}
         </TableBody>

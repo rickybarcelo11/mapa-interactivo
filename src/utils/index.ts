@@ -1,4 +1,4 @@
-import type { TreeSection } from "@/types"
+import type { TreeSection } from "../types"
 
 export const getConsolidatedValue = (values: string[]): string => {
   const uniqueValues = [...new Set(values.filter((v) => v))]
