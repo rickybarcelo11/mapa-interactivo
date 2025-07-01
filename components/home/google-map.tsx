@@ -9,9 +9,10 @@ const containerStyle = {
 }
 
 const center = {
-  lat: -34.6037, // Buenos Aires de ejemplo
-  lng: -58.3816,
+  lat: -31.4491197637593, 
+  lng: -60.93034489351039,
 }
+
 
 export default function GoogleMapComponent() {
   const { isLoaded } = useJsApiLoader({
