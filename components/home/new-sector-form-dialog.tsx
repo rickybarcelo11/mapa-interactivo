@@ -171,7 +171,7 @@ export default function NewSectorFormDialog({ isOpen, onOpenChange, onSubmit }: 
               Cancelar
             </Button>
             <Button type="submit" className="bg-sky-500 hover:bg-sky-600">
-              Crear Sector y Dibujar
+              Guardar
             </Button>
           </DialogFooter>
         </form>

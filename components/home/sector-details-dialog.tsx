@@ -11,7 +11,7 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
-import type { SectorPolygon } from "./map-interactive-placeholder" // Asegúrate que la ruta es correcta
+import type { SectorPolygon } from "@/src/types"
 import { Label } from "@/components/ui/label"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
@@ -47,7 +47,7 @@ export default function SectorDetailsDialog({ isOpen, onOpenChange, sector }: Se
 
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
-      <DialogContent className="bg-slate-800 text-slate-50 border-slate-700 sm:max-w-md">
+      <DialogContent className="bg-slate-800 text-slate-50 border-slate-700 sm:max-w-lg">
         <DialogHeader>
           <DialogTitle className="text-sky-400">{isEditing ? "Modificar Sector" : "Detalles del Sector"}</DialogTitle>
           <DialogDescription className="text-slate-400">
@@ -65,7 +65,7 @@ export default function SectorDetailsDialog({ isOpen, onOpenChange, sector }: Se
               value={formData.name}
               onChange={handleChange}
               readOnly={!isEditing}
-              className="bg-slate-700 border-slate-600 text-slate-50 read-only:opacity-70"
+              className="bg-slate-700 border-slate-600 text-slate-50 read-only:opacity-70 max-w-md mx-auto"
             />
           </div>
           <div>
@@ -78,7 +78,7 @@ export default function SectorDetailsDialog({ isOpen, onOpenChange, sector }: Se
               value={formData.type}
               onChange={handleChange}
               readOnly={!isEditing}
-              className="bg-slate-700 border-slate-600 text-slate-50 read-only:opacity-70"
+              className="bg-slate-700 border-slate-600 text-slate-50 read-only:opacity-70 max-w-md mx-auto"
             />
           </div>
           <div>
@@ -91,7 +91,7 @@ export default function SectorDetailsDialog({ isOpen, onOpenChange, sector }: Se
               value={formData.direccion || ""}
               onChange={handleChange}
               readOnly={!isEditing}
-              className="bg-slate-700 border-slate-600 text-slate-50 read-only:opacity-70"
+              className="bg-slate-700 border-slate-600 text-slate-50 read-only:opacity-70 max-w-md mx-auto"
             />
           </div>
           <div>
@@ -104,7 +104,7 @@ export default function SectorDetailsDialog({ isOpen, onOpenChange, sector }: Se
               value={formData.observaciones || ""}
               onChange={handleChange}
               readOnly={!isEditing}
-              className="bg-slate-700 border-slate-600 text-slate-50 read-only:opacity-70"
+              className="bg-slate-700 border-slate-600 text-slate-50 read-only:opacity-70 max-w-md mx-auto"
             />
           </div>
           <div className="text-xs text-slate-400">

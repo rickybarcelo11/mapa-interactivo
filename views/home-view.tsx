@@ -1,19 +1,23 @@
 "use client"
 
 import { useState } from "react"
-import GoogleMapComponent from "@/components/home/google-map"
+import dynamic from "next/dynamic"
+import MapInteractive from "@/components/home/map-interactive"
 import ToolsFab from "@/components/home/tools-fab"
 import ToolsPanelSheet from "@/components/home/tools-panel-sheet"
 import MapLegendDisplay from "@/components/home/map-legend-display"
 import SectorDetailsDialog from "@/components/home/sector-details-dialog"
 import NewSectorFormDialog from "@/components/home/new-sector-form-dialog"
+import type { SectorPolygon, SectorStatus, SectorType } from "@/src/types"
 
-const sampleSectors = [
+const MapInteractiveComponent = dynamic(() => import("@/components/home/map-interactive"), { ssr: false })
+
+const sampleSectors: SectorPolygon[] = [
   {
     id: "1",
     name: "Sector Centro",
-    status: "pendiente",
-    type: "Poda",
+    status: "pendiente" as SectorStatus,
+    type: "Poda" as SectorType,
     // Polígono más irregular (ejemplo)
     path: [
       { lng: -58.3816, lat: -34.6037 },
@@ -28,8 +32,8 @@ const sampleSectors = [
   {
     id: "2",
     name: "Parque Norte",
-    status: "en proceso",
-    type: "Corte de pasto",
+    status: "en proceso" as SectorStatus,
+    type: "Corte de pasto" as SectorType,
     path: [
       { lng: -58.3916, lat: -34.5937 },
       { lng: -58.39, lat: -34.593 },
@@ -44,8 +48,8 @@ const sampleSectors = [
   {
     id: "3",
     name: "Barrio Residencial Sur",
-    status: "completado",
-    type: "Poda",
+    status: "completado" as SectorStatus,
+    type: "Poda" as SectorType,
     path: [
       { lng: -58.3716, lat: -34.6137 },
       { lng: -58.37, lat: -34.614 },
@@ -60,11 +64,13 @@ const sampleSectors = [
 
 export default function HomeView() {
   const [isToolsPanelOpen, setIsToolsPanelOpen] = useState(false)
-  const [selectedSector, setSelectedSector] = useState(null)
+  const [selectedSector, setSelectedSector] = useState<SectorPolygon | null>(null)
   const [isNewSectorModalOpen, setIsNewSectorModalOpen] = useState(false)
-  const [sectors, setSectors] = useState(sampleSectors)
+  const [sectors, setSectors] = useState<SectorPolygon[]>(sampleSectors)
+  const [isDrawingMode, setIsDrawingMode] = useState(false)
+  const [pendingSectorData, setPendingSectorData] = useState<any>(null)
 
-  const handlePolygonClick = (sector: any) => {
+  const handlePolygonClick = (sector: SectorPolygon) => {
     setSelectedSector(sector)
   }
 
@@ -73,28 +79,40 @@ export default function HomeView() {
   }
 
   const handleCreateNewSector = (newSectorData: any) => {
-    const newId = String(Date.now())
-    // Simulación de path para el nuevo sector. En la app real, esto vendría del dibujo del usuario.
-    const newPath = [
-      { lng: -58.385 + (Math.random() - 0.5) * 0.01, lat: -34.605 + (Math.random() - 0.5) * 0.01 },
-      { lng: -58.384 + (Math.random() - 0.5) * 0.01, lat: -34.606 + (Math.random() - 0.5) * 0.01 },
-      { lng: -58.386 + (Math.random() - 0.5) * 0.01, lat: -34.607 + (Math.random() - 0.5) * 0.01 },
-      { lng: -58.387 + (Math.random() - 0.5) * 0.01, lat: -34.6055 + (Math.random() - 0.5) * 0.01 },
-    ]
-    const newSector = {
-      ...newSectorData,
-      id: newId,
-      path: [...newPath, newPath[0]], // Cerrar el polígono
-    }
-    setSectors((prevSectors) => [...prevSectors, newSector])
+    // Guardar los datos del sector y activar modo dibujo
+    setPendingSectorData(newSectorData)
     setIsNewSectorModalOpen(false)
-    alert(`Sector "${newSector.name}" creado (simulado). Deberías poder dibujarlo en el mapa.`)
+    setIsDrawingMode(true)
+  }
+
+  const handleDrawingComplete = (path: { lat: number; lng: number }[]) => {
+    if (!pendingSectorData) return
+
+    const newId = String(Date.now())
+    const newSector: SectorPolygon = {
+      ...pendingSectorData,
+      id: newId,
+      path: [...path, path[0]], // Cerrar el polígono
+    }
+    
+    setSectors((prevSectors) => [...prevSectors, newSector])
+    setPendingSectorData(null)
+    setIsDrawingMode(false)
+    
+    alert(`Sector "${newSector.name}" creado exitosamente!`)
   }
 
   return (
-    <div className="relative h-[calc(100vh-120px)] flex flex-col">
-      <GoogleMapComponent />
-      <MapLegendDisplay />
+    <div className="relative h-screen flex flex-col items-center justify-center">
+      <div className="w-full max-w-7xl flex flex-col items-center mt-8 mb-8">
+        <MapInteractiveComponent 
+          sectors={sectors}
+          onPolygonClick={handlePolygonClick}
+          isDrawingMode={isDrawingMode}
+          onDrawingComplete={handleDrawingComplete}
+        />
+        <MapLegendDisplay />
+      </div>
       <ToolsFab onOpenTools={() => setIsToolsPanelOpen(true)} />
       <ToolsPanelSheet
         isOpen={isToolsPanelOpen}
