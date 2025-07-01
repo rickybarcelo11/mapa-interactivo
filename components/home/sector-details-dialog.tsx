@@ -21,9 +21,10 @@ interface SectorDetailsDialogProps {
   isOpen: boolean
   onOpenChange: (isOpen: boolean) => void
   sector: SectorPolygon
+  onRedrawSector?: (sector: SectorPolygon) => void
 }
 
-export default function SectorDetailsDialog({ isOpen, onOpenChange, sector }: SectorDetailsDialogProps) {
+export default function SectorDetailsDialog({ isOpen, onOpenChange, sector, onRedrawSector }: SectorDetailsDialogProps) {
   // Simulación de edición
   const [isEditing, setIsEditing] = React.useState(false)
   const [formData, setFormData] = React.useState(sector)
@@ -130,9 +131,9 @@ export default function SectorDetailsDialog({ isOpen, onOpenChange, sector }: Se
               <Button
                 variant="outline"
                 className="border-slate-600 text-slate-300 hover:bg-slate-700 flex items-center gap-2"
+                onClick={() => onRedrawSector && onRedrawSector(sector)}
               >
-                <MapPin size={16} /> Editar Forma Polígono
-                <span className="text-xs text-slate-500">(Simulado)</span>
+                <MapPin size={16} /> Redibujar Sector
               </Button>
               <Button
                 onClick={() => setIsEditing(true)}

@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect, useRef } from "react"
+import { useState, useEffect, useRef, Fragment } from "react"
 import { MapContainer, TileLayer, Polygon, useMap, useMapEvents, Marker, Polyline } from "react-leaflet"
 import "leaflet/dist/leaflet.css"
 import type { SectorPolygon } from "@/src/types"
@@ -96,6 +96,16 @@ function DrawingHandler({ isDrawingMode, onDrawingComplete }: {
   )
 }
 
+// Calcula el centroide de un polígono
+function getPolygonCentroid(path: { lat: number; lng: number }[]): [number, number] {
+  let x = 0, y = 0, n = path.length;
+  for (let i = 0; i < n; i++) {
+    x += path[i].lat;
+    y += path[i].lng;
+  }
+  return [x / n, y / n];
+}
+
 export default function MapInteractive({ 
   sectors, 
   onPolygonClick, 
@@ -172,22 +182,50 @@ export default function MapInteractive({
           url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
         />
         {sectors.map((sector) => (
-          <Polygon
-            key={sector.id}
-            positions={toLatLngArray(sector.path)}
-            pathOptions={{
-              color:
-                sector.status === "pendiente"
-                  ? "#ef4444"
-                  : sector.status === "en proceso"
-                  ? "#eab308"
-                  : "#22c55e",
-              fillOpacity: 0.5,
-            }}
-            eventHandlers={{
-              click: () => onPolygonClick(sector),
-            }}
-          />
+          <Fragment key={sector.id}>
+            <Polygon
+              positions={toLatLngArray(sector.path)}
+              pathOptions={{
+                color:
+                  sector.status === "pendiente"
+                    ? "#ef4444"
+                    : sector.status === "en proceso"
+                    ? "#eab308"
+                    : "#22c55e",
+                fillOpacity: 0.5,
+              }}
+              eventHandlers={{
+                click: () => onPolygonClick(sector),
+              }}
+            />
+            {/* Nombre del sector centrado */}
+            <Marker
+              key={sector.id + "-label"}
+              position={getPolygonCentroid(sector.path)}
+              icon={(() => {
+                if (typeof window === "undefined") return undefined;
+                const L = require("leaflet");
+                return L.divIcon({
+                  className: 'sector-label-marker',
+                  html: `<div style="
+                    background: rgba(30,41,59,0.85);
+                    color: #fff;
+                    font-size: 0.95rem;
+                    font-weight: 600;
+                    padding: 2px 10px;
+                    border-radius: 6px;
+                    text-align: center;
+                    text-transform: uppercase;
+                    box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+                    pointer-events: none;
+                  ">${sector.name}</div>`,
+                  iconSize: [120, 28],
+                  iconAnchor: [60, 14],
+                });
+              })()}
+              interactive={false}
+            />
+          </Fragment>
         ))}
         {/* Dibujo en curso */}
         {isDrawingMode && drawingPoints.length > 0 && (

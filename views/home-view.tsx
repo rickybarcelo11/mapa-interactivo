@@ -86,21 +86,30 @@ export default function HomeView() {
   }
 
   const handleDrawingComplete = (path: { lat: number; lng: number }[]) => {
-    if (!pendingSectorData) return
+    if (!pendingSectorData) return;
 
-    const newId = String(Date.now())
-    const newSector: SectorPolygon = {
-      ...pendingSectorData,
-      id: newId,
-      path: [...path, path[0]], // Cerrar el polígono
+    // Si el pendingSectorData ya tiene id, es un redibujo, si no, es uno nuevo
+    let newSector: SectorPolygon;
+    if (pendingSectorData.id) {
+      newSector = {
+        ...pendingSectorData,
+        path: [...path, path[0]], // Cerrar el polígono
+      };
+      setSectors((prevSectors) => prevSectors.map(s => s.id === newSector.id ? newSector : s));
+      alert(`Sector "${newSector.name}" actualizado exitosamente!`);
+    } else {
+      const newId = String(Date.now());
+      newSector = {
+        ...pendingSectorData,
+        id: newId,
+        path: [...path, path[0]], // Cerrar el polígono
+      };
+      setSectors((prevSectors) => [...prevSectors, newSector]);
+      alert(`Sector "${newSector.name}" creado exitosamente!`);
     }
-    
-    setSectors((prevSectors) => [...prevSectors, newSector])
-    setPendingSectorData(null)
-    setIsDrawingMode(false)
-    
-    alert(`Sector "${newSector.name}" creado exitosamente!`)
-  }
+    setPendingSectorData(null);
+    setIsDrawingMode(false);
+  };
 
   return (
     <div className="relative h-screen flex flex-col items-center justify-center">
@@ -124,6 +133,11 @@ export default function HomeView() {
           isOpen={!!selectedSector}
           onOpenChange={() => setSelectedSector(null)}
           sector={selectedSector}
+          onRedrawSector={(sector) => {
+            setSelectedSector(null);
+            setPendingSectorData(sector);
+            setIsDrawingMode(true);
+          }}
         />
       )}
       <NewSectorFormDialog
