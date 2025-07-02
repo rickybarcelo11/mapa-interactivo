@@ -154,7 +154,7 @@ export default function MapInteractive({
   };
 
   return (
-    <div className="flex-grow rounded-lg shadow-xl relative overflow-hidden" style={{ height: 600, width: '100%' }}>
+    <div className="flex-grow rounded-lg shadow-xl relative overflow-hidden" style={{ height: 770, width: '100%' }}>
       {isDrawingMode && (
         <div className="absolute top-4 left-4 z-10 bg-blue-500 text-white px-4 py-2 rounded-lg shadow-lg">
           <p className="text-sm font-medium">Modo Dibujo Activo</p>

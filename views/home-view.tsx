@@ -112,8 +112,8 @@ export default function HomeView() {
   };
 
   return (
-    <div className="relative h-screen flex flex-col items-center justify-center">
-      <div className="w-full max-w-7xl flex flex-col items-center mt-8 mb-8">
+    <div className="flex flex-col">
+      <div className="w-full max-w-5xl mx-auto p-6">
         <MapInteractiveComponent 
           sectors={sectors}
           onPolygonClick={handlePolygonClick}
