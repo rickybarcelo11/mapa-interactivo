@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useMemo } from "react"
 import dynamic from "next/dynamic"
 import MapInteractive from "@/components/home/map-interactive"
 import ToolsFab from "@/components/home/tools-fab"
@@ -9,6 +9,7 @@ import MapLegendDisplay from "@/components/home/map-legend-display"
 import SectorDetailsDialog from "@/components/home/sector-details-dialog"
 import NewSectorFormDialog from "@/components/home/new-sector-form-dialog"
 import type { SectorPolygon, SectorStatus, SectorType } from "@/src/types"
+import { useNotifications } from "@/src/hooks"
 
 const MapInteractiveComponent = dynamic(() => import("@/components/home/map-interactive"), { ssr: false })
 
@@ -69,6 +70,9 @@ export default function HomeView() {
   const [sectors, setSectors] = useState<SectorPolygon[]>(sampleSectors)
   const [isDrawingMode, setIsDrawingMode] = useState(false)
   const [pendingSectorData, setPendingSectorData] = useState<any>(null)
+  const [typeFilters, setTypeFilters] = useState({ poda: true, cortePasto: true })
+  const [statusFilters, setStatusFilters] = useState({ pendiente: true, enProceso: true, completado: true })
+  const { showSectorCreated, showSectorUpdated } = useNotifications()
 
   const handlePolygonClick = (sector: SectorPolygon) => {
     setSelectedSector(sector)
@@ -96,7 +100,7 @@ export default function HomeView() {
         path: [...path, path[0]], // Cerrar el polígono
       };
       setSectors((prevSectors) => prevSectors.map(s => s.id === newSector.id ? newSector : s));
-      alert(`Sector "${newSector.name}" actualizado exitosamente!`);
+      showSectorUpdated(newSector.name);
     } else {
       const newId = String(Date.now());
       newSector = {
@@ -105,17 +109,25 @@ export default function HomeView() {
         path: [...path, path[0]], // Cerrar el polígono
       };
       setSectors((prevSectors) => [...prevSectors, newSector]);
-      alert(`Sector "${newSector.name}" creado exitosamente!`);
+      showSectorCreated(newSector.name);
     }
     setPendingSectorData(null);
     setIsDrawingMode(false);
   };
 
+  const filteredSectors = useMemo(() => {
+    return sectors.filter((s) => {
+      const typeOk = (s.type === "Poda" && typeFilters.poda) || (s.type === "Corte de pasto" && typeFilters.cortePasto)
+      const statusOk = (s.status === "pendiente" && statusFilters.pendiente) || (s.status === "en proceso" && statusFilters.enProceso) || (s.status === "completado" && statusFilters.completado)
+      return typeOk && statusOk
+    })
+  }, [sectors, typeFilters, statusFilters])
+
   return (
     <div className="flex flex-col">
       <div className="w-full max-w-5xl mx-auto p-6">
         <MapInteractiveComponent 
-          sectors={sectors}
+          sectors={filteredSectors}
           onPolygonClick={handlePolygonClick}
           isDrawingMode={isDrawingMode}
           onDrawingComplete={handleDrawingComplete}
@@ -127,6 +139,11 @@ export default function HomeView() {
         isOpen={isToolsPanelOpen}
         onOpenChange={setIsToolsPanelOpen}
         onNewSector={handleOpenNewSectorForm}
+        onApplyFilters={({ types, status }) => {
+          setTypeFilters(types)
+          setStatusFilters(status)
+        }}
+        initialFilters={{ types: typeFilters, status: statusFilters }}
       />
       {selectedSector && (
         <SectorDetailsDialog
@@ -137,6 +154,10 @@ export default function HomeView() {
             setSelectedSector(null);
             setPendingSectorData(sector);
             setIsDrawingMode(true);
+          }}
+          onSave={(updated) => {
+            setSectors((prev) => prev.map((s) => (s.id === updated.id ? { ...s, ...updated } : s)))
+            setSelectedSector(null)
           }}
         />
       )}

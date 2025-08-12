@@ -17,6 +17,8 @@ import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import type { Task, Worker } from "@/views/tasks-view"
 import type { SectorStatus } from "@/components/home/map-interactive-placeholder"
+import { useNotifications } from "@/src/hooks"
+import { validateTaskForm, validateTask } from "@/src/validations/task-schemas"
 
 interface EditTaskModalProps {
   task: Task
@@ -28,6 +30,7 @@ interface EditTaskModalProps {
 
 export default function EditTaskModal({ task, workers, isOpen, onOpenChange, onSave }: EditTaskModalProps) {
   const [formData, setFormData] = useState<Task>(task)
+  const { showValidationError } = useNotifications()
 
   useEffect(() => {
     setFormData(task)
@@ -48,7 +51,28 @@ export default function EditTaskModal({ task, workers, isOpen, onOpenChange, onS
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
-    onSave(formData)
+    // Validar campos mínimos del formulario
+    const subset = {
+      sectorId: formData.sectorId,
+      type: formData.type,
+      status: formData.status,
+      startDate: formData.startDate,
+      endDate: formData.endDate || undefined,
+      assignedWorkerId: formData.assignedWorkerId,
+      observations: formData.observations || undefined,
+    }
+    const validatedSubset = validateTaskForm(subset)
+    if (!validatedSubset) {
+      showValidationError("Revisa los campos de la tarea")
+      return
+    }
+    // Validar la entidad completa resultante
+    try {
+      const validatedFull = validateTask({ ...formData, ...validatedSubset })
+      onSave(validatedFull as Task)
+    } catch (err) {
+      showValidationError("Datos de tarea inválidos")
+    }
   }
 
   return (

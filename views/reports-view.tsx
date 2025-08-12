@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button"
 import { Download, FileText, FileSpreadsheet } from "lucide-react"
 import type { Task, Worker } from "./tasks-view" // Reutilizar tipos
 import type { SectorPolygon, SectorStatus } from "@/components/home/map-interactive-placeholder" // Reutilizar tipos
+import { useNotifications } from "@/src/hooks"
 
 // Usaremos los mismos datos de ejemplo que en TasksView para simular
 const sampleWorkers: Worker[] = [
@@ -330,6 +331,7 @@ export default function ReportsView() {
   })
   const [reportData, setReportData] = useState<ReportData | null>(null)
   const [showReport, setShowReport] = useState(false)
+  const { showSimulatedFeature } = useNotifications()
 
   const handleApplyFilters = useCallback((currentFilters: ReportFiltersState) => {
     setFilters(currentFilters) // Guardar los filtros aplicados
@@ -412,7 +414,7 @@ export default function ReportsView() {
   }, [])
 
   const handleExport = (format: "PDF" | "Excel" | "CSV") => {
-    alert(`Exportando informe como ${format} (simulación). Fecha: ${new Date().toLocaleDateString()}`)
+    showSimulatedFeature(`Exportar informe como ${format}`)
   }
 
   return (

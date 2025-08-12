@@ -2,9 +2,12 @@
 
 import { useState, useEffect } from "react"
 import TasksFilters from "@/components/tasks/tasks-filters"
-import TasksTable from "@/components/tasks/tasks-table"
+import TasksTable from "@/components/tasks/tasks-table" // Legacy table (unused ahora)
+import TasksExpandableList from "@/components/tasks/tasks-expandable-list"
 import EditTaskModal from "@/components/tasks/edit-task-modal"
 import type { Task, Worker, SectorStatus } from "@/src/types"
+import { useSearchParams, useRouter } from "next/navigation"
+import { useNotifications } from "@/src/hooks"
 
 // Importamos los datos simulados
 import { tasksData } from "@/src/data/tasks.data"
@@ -15,6 +18,13 @@ export default function TasksView() {
   const [workers, setWorkers] = useState<Worker[]>([])
   const [filteredTasks, setFilteredTasks] = useState<Task[]>([])
   const [editingTask, setEditingTask] = useState<Task | null>(null)
+  const { showTaskUpdated, showTaskDeleted, showTaskFinished } = useNotifications()
+  const searchParams = useSearchParams()
+  const router = useRouter()
+  const taskIdParam = searchParams.get('taskId')
+  const sectorIdParam = searchParams.get('sectorId')
+  const workerIdParam = searchParams.get('workerId')
+  const autoExpandParam = searchParams.get('autoExpand')
 
   // Simulación de carga de datos desde una API
   useEffect(() => {
@@ -33,16 +43,37 @@ export default function TasksView() {
     setWorkers(workersData)
   }, [])
 
+  // Aplicar filtros por query params y autoexpansión
+  useEffect(() => {
+    // Aplicar filtro por sector o worker si vienen en la URL
+    let result = allTasks
+    if (sectorIdParam) {
+      result = result.filter(t => t.sectorId === sectorIdParam)
+    }
+    if (workerIdParam) {
+      result = result.filter(t => t.assignedWorkerId === workerIdParam)
+    }
+    setFilteredTasks(result)
+  }, [allTasks, sectorIdParam, workerIdParam])
+
+  // Si viene autoExpand=1 y no hay taskId específico, autoexpandir la primera tarea filtrada
+  const autoExpandTaskId = taskIdParam || (autoExpandParam === '1' && filteredTasks.length > 0 ? filteredTasks[0].id : null)
+
   const handleUpdateTask = (updatedTask: Task) => {
     const newTasks = allTasks.map((task) => (task.id === updatedTask.id ? updatedTask : task))
     setAllTasks(newTasks)
     // El componente de filtros se encargará de actualizar `filteredTasks`
     setEditingTask(null)
+    showTaskUpdated(updatedTask.sectorName)
   }
 
   const handleDeleteTask = (taskId: string) => {
+    const taskToDelete = allTasks.find(task => task.id === taskId)
     const newTasks = allTasks.filter((task) => task.id !== taskId)
     setAllTasks(newTasks)
+    if (taskToDelete) {
+      showTaskDeleted(taskToDelete.sectorName)
+    }
   }
 
   const handleFinishTask = (taskId: string) => {
@@ -51,6 +82,11 @@ export default function TasksView() {
       task.id === taskId ? { ...task, status: "completado" as SectorStatus, endDate: now } : task
     const newTasks = allTasks.map(updateFn)
     setAllTasks(newTasks)
+    
+    const finishedTask = allTasks.find(task => task.id === taskId)
+    if (finishedTask) {
+      showTaskFinished(finishedTask.sectorName)
+    }
   }
 
   const uniqueSectors = [
@@ -67,8 +103,9 @@ export default function TasksView() {
         allTasks={allTasks} // El filtro necesita todas las tareas para trabajar
       />
       <div className="bg-slate-800 shadow-xl rounded-lg p-0 overflow-hidden">
-        <TasksTable
+        <TasksExpandableList
           tasks={filteredTasks}
+          autoExpandTaskId={autoExpandTaskId}
           onEdit={setEditingTask}
           onDelete={handleDeleteTask}
           onFinish={handleFinishTask}

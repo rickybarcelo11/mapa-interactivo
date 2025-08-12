@@ -16,6 +16,7 @@ import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import type { IndividualTree, TreeStatus } from "@/views/trees-view"
+import { useNotifications, useTreeValidation } from "@/src/hooks"
 
 interface AddTreeModalProps {
   isOpen: boolean
@@ -38,6 +39,8 @@ const treeStatusOptions: TreeStatus[] = ["Sano", "Enfermo", "Necesita Poda", "Se
 
 export default function AddTreeModal({ isOpen, onOpenChange, onSave, treeToEdit }: AddTreeModalProps) {
   const [formData, setFormData] = useState<Omit<IndividualTree, "id">>(initialFormData)
+  const { showRequiredFieldsError } = useNotifications()
+  const { validateTreeForm } = useTreeValidation()
 
   useEffect(() => {
     if (treeToEdit) {
@@ -68,11 +71,15 @@ export default function AddTreeModal({ isOpen, onOpenChange, onSave, treeToEdit 
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
-    if (!formData.species || !formData.streetName || !formData.streetNumber) {
-      alert("Especie, Nombre de Calle y Altura son campos obligatorios.")
+    // Validación con Zod
+    const validated = validateTreeForm(formData)
+    if (!validated) {
+      if (!formData.species || !formData.streetName || !formData.streetNumber) {
+        showRequiredFieldsError()
+      }
       return
     }
-    onSave(formData)
+    onSave(validated)
     // No cerramos el modal aquí, se maneja desde TreesView
   }
 

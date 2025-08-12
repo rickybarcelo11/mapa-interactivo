@@ -7,6 +7,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Button } from "@/components/ui/button"
 import { X, Edit, Trash2 } from "lucide-react"
 import type { IndividualTree, TreeStatus } from "@/views/trees-view"
+import { useNotifications } from "@/src/hooks"
 import ConfirmDeleteDialog from "@/components/tasks/confirm-delete-dialog" // Reutilizamos
 // AddTreeModal se maneja desde TreesView, pero la edición podría usar uno similar o el mismo.
 
@@ -20,6 +21,7 @@ export default function IndividualTreeView({ trees: initialTrees }: IndividualTr
   const [trees, setTrees] = useState<IndividualTree[]>(initialTrees) // Para permitir borrado local
   const [filters, setFilters] = useState({ species: "", status: "todos", address: "", freeText: "" })
   const [deletingTree, setDeletingTree] = useState<IndividualTree | null>(null)
+  const { showSimulatedFeature } = useNotifications()
 
   const uniqueSpecies = useMemo(() => {
     const speciesSet = new Set(trees.map((tree) => tree.species))
@@ -61,8 +63,8 @@ export default function IndividualTreeView({ trees: initialTrees }: IndividualTr
 
   const handleEditTree = (tree: IndividualTree) => {
     // Aquí se abriría el modal de edición, similar al de agregar.
-    // Por ahora, una alerta. El modal de agregar está en TreesView.
-    alert(`Editar árbol: ${tree.species} en ${tree.streetName} ${tree.streetNumber} (simulación).`)
+    // Por ahora, una notificación. El modal de agregar está en TreesView.
+    showSimulatedFeature(`Editar árbol: ${tree.species} en ${tree.streetName} ${tree.streetNumber}`)
   }
 
   return (

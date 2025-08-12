@@ -3,20 +3,32 @@
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import type { SectorPolygon } from "@/components/home/map-interactive-placeholder"
-import { Edit, History, MapPin } from "lucide-react"
+import { Edit, History, MapPin, Trash2 } from "lucide-react"
+import { useNotifications } from "@/src/hooks"
 
 interface SectorRowDetailsProps {
   sector: SectorPolygon
+  onEdit?: (sector: SectorPolygon) => void
+  onDelete?: (sectorId: string) => void
+  onViewHistory?: (sector: SectorPolygon) => void
 }
 
-export default function SectorRowDetails({ sector }: SectorRowDetailsProps) {
+export default function SectorRowDetails({ sector, onEdit, onDelete, onViewHistory }: SectorRowDetailsProps) {
+  const { showSimulatedFeature } = useNotifications()
+  
   const handleEditData = () => {
-    alert(`Editar datos del sector: ${sector.name} (simulación)`)
-    // Aquí abrirías un modal de edición o navegarías a una página de edición.
+    if (onEdit) onEdit(sector)
+    else showSimulatedFeature(`Editar datos del sector: ${sector.name}`)
   }
 
   const handleViewHistory = () => {
-    alert(`Ver historial/tareas del sector: ${sector.name} (simulación)`)
+    if (onViewHistory) onViewHistory(sector)
+    else showSimulatedFeature(`Ver historial/tareas del sector: ${sector.name}`)
+  }
+
+  const handleDelete = () => {
+    if (onDelete) onDelete(sector.id)
+    else showSimulatedFeature(`Eliminar sector: ${sector.name}`)
   }
 
   return (
@@ -66,6 +78,13 @@ export default function SectorRowDetails({ sector }: SectorRowDetailsProps) {
             className="border-slate-600 text-slate-300 hover:bg-slate-700 w-full sm:w-auto"
           >
             <History className="mr-2 h-4 w-4" /> Ver Historial/Tareas
+          </Button>
+          <Button
+            variant="destructive"
+            onClick={handleDelete}
+            className="w-full sm:w-auto"
+          >
+            <Trash2 className="mr-2 h-4 w-4" /> Eliminar
           </Button>
         </div>
       </CardContent>

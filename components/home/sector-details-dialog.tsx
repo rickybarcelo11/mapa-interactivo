@@ -16,18 +16,21 @@ import { Label } from "@/components/ui/label"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { Edit3, MapPin } from "lucide-react"
+import { useNotifications } from "@/src/hooks"
 
 interface SectorDetailsDialogProps {
   isOpen: boolean
   onOpenChange: (isOpen: boolean) => void
   sector: SectorPolygon
   onRedrawSector?: (sector: SectorPolygon) => void
+  onSave?: (updated: SectorPolygon) => void
 }
 
-export default function SectorDetailsDialog({ isOpen, onOpenChange, sector, onRedrawSector }: SectorDetailsDialogProps) {
+export default function SectorDetailsDialog({ isOpen, onOpenChange, sector, onRedrawSector, onSave }: SectorDetailsDialogProps) {
   // Simulación de edición
   const [isEditing, setIsEditing] = React.useState(false)
   const [formData, setFormData] = React.useState(sector)
+  const { showSimulatedFeature } = useNotifications()
 
   React.useEffect(() => {
     setFormData(sector) // Actualizar datos si el sector cambia
@@ -39,11 +42,13 @@ export default function SectorDetailsDialog({ isOpen, onOpenChange, sector, onRe
   }
 
   const handleSaveChanges = () => {
-    console.log("Guardando cambios:", formData)
-    // Aquí llamarías a tu API para guardar los cambios
+    if (onSave) {
+      onSave(formData)
+    } else {
+      showSimulatedFeature("Cambios guardados")
+    }
     setIsEditing(false)
-    // Podrías actualizar el estado global de sectores aquí
-    alert("Cambios guardados (simulado).")
+    onOpenChange(false)
   }
 
   return (

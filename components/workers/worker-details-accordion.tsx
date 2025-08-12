@@ -5,6 +5,7 @@ import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import type { Task, SectorStatus } from "@/views/tasks-view" // Ajusta la ruta si es necesario
 import { Eye } from "lucide-react"
+import { useNotifications } from "@/src/hooks"
 
 interface WorkerDetailsAccordionProps {
   tasks: Task[]
@@ -18,9 +19,11 @@ const statusBadgeVariant: Record<SectorStatus, "default" | "destructive" | "outl
 }
 
 export default function WorkerDetailsAccordion({ tasks, workerName }: WorkerDetailsAccordionProps) {
+  const { showSimulatedFeature } = useNotifications()
+  
   const handleViewTask = (taskId: string) => {
-    alert(
-      `Ver/Modificar tarea ID: ${taskId} (simulación). En una app real, esto podría abrir un modal o navegar a la tarea.`,
+    showSimulatedFeature(
+      `Ver/Modificar tarea ID: ${taskId}`
     )
   }
 

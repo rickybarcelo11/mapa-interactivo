@@ -16,6 +16,7 @@ import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import type { SectorStatus, SectorType } from "./map-interactive-placeholder"
+import { useSectorValidation } from "@/src/hooks"
 
 interface NewSectorFormDialogProps {
   isOpen: boolean
@@ -39,6 +40,7 @@ const initialFormData = {
 
 export default function NewSectorFormDialog({ isOpen, onOpenChange, onSubmit }: NewSectorFormDialogProps) {
   const [formData, setFormData] = useState(initialFormData)
+  const { validateSectorForm } = useSectorValidation()
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     setFormData({ ...formData, [e.target.name]: e.target.value })
@@ -50,7 +52,9 @@ export default function NewSectorFormDialog({ isOpen, onOpenChange, onSubmit }: 
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
-    onSubmit(formData)
+    const validated = validateSectorForm(formData)
+    if (!validated) return
+    onSubmit(validated)
     setFormData(initialFormData) // Reset form
     // onOpenChange(false); // Dialog se cierra desde el padre
   }

@@ -10,20 +10,18 @@ import React from "react"
 
 interface SectorsTableProps {
   sectors: SectorPolygon[]
+  onEdit?: (sector: SectorPolygon) => void
+  onDelete?: (sectorId: string) => void
+  onViewHistory?: (sector: SectorPolygon) => void
 }
 
 const statusBadgeVariant: Record<SectorStatus, "default" | "destructive" | "outline" | "secondary"> = {
   pendiente: "destructive",
-  "en proceso": "default", // 'default' suele ser amarillo/naranja en shadcn themes
-  completado: "secondary", // 'secondary' suele ser verde/azul en shadcn themes
+  "en proceso": "default",
+  completado: "secondary",
 }
-// Ajustar colores de badge si es necesario en globals.css o tailwind.config.ts
-// Por ahora, usamos los colores por defecto de shadcn/ui Badge.
-// destructive: rojo, default: (depende del tema, puede ser primario), secondary: (depende del tema, puede ser gris/verde)
-// Para 'en proceso' (amarillo) y 'completado' (verde) más explícitos, se podrían necesitar clases custom.
-// Ejemplo: className="bg-yellow-500 text-yellow-900" para 'en proceso'
 
-export default function SectorsTable({ sectors }: SectorsTableProps) {
+export default function SectorsTable({ sectors, onEdit, onDelete, onViewHistory }: SectorsTableProps) {
   const [expandedRow, setExpandedRow] = useState<string | null>(null)
 
   const toggleRow = (id: string) => {
@@ -79,9 +77,9 @@ export default function SectorsTable({ sectors }: SectorsTableProps) {
               </TableRow>
               {expandedRow === sector.id && (
                 <TableRow className="bg-slate-750 hover:bg-slate-750 border-b-2 border-sky-500">
-                  <TableCell colSpan={5} className="p-0">
+                  <TableCell colSpan={5} className="p-0" onClick={(e) => e.stopPropagation()}>
                     <div className="p-4">
-                      <SectorRowDetails sector={sector} />
+                      <SectorRowDetails sector={sector} onEdit={onEdit} onDelete={onDelete} onViewHistory={onViewHistory} />
                     </div>
                   </TableCell>
                 </TableRow>

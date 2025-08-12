@@ -3,9 +3,12 @@
 import { useState } from "react"
 import SectorsFilters from "@/components/sectors/sectors-filters"
 import SectorsTable from "@/components/sectors/sectors-table"
+import EditSectorModal from "@/components/sectors/edit-sector-modal"
 import { Button } from "@/components/ui/button"
 import { PlusCircle } from "lucide-react"
 import type { SectorPolygon } from "@/components/home/map-interactive-placeholder" // Reutilizamos el tipo
+import { useNotifications } from "@/src/hooks"
+import { useRouter } from "next/navigation"
 
 // Datos de ejemplo para los sectores
 const sampleSectorsData: SectorPolygon[] = [
@@ -155,12 +158,15 @@ export interface SectorFiltersState {
 
 export default function SectorsView() {
   const [sectors, setSectors] = useState<SectorPolygon[]>(sampleSectorsData)
+  const [editingSector, setEditingSector] = useState<SectorPolygon | null>(null)
   const [filters, setFilters] = useState<SectorFiltersState>({
     nombre: "",
     tipo: "todos",
     estado: "todos",
     direccion: "",
   })
+  const { showSimulatedFeature } = useNotifications()
+  const router = useRouter()
 
   const handleFilterChange = (newFilters: Partial<SectorFiltersState>) => {
     setFilters((prevFilters) => ({ ...prevFilters, ...newFilters }))
@@ -178,12 +184,12 @@ export default function SectorsView() {
   })
 
   const handleAddNewSector = () => {
-    // En una aplicación real, esto redirigiría a la vista Home.
-    // router.push('/'); // Ejemplo si usaras Next.js router
-    alert(
-      "Redirigiendo a la Vista Home para crear un nuevo sector en el mapa (simulación).\n" +
-        "En una aplicación real, esto cambiaría la URL a la página principal.",
-    )
+    router.push("/")
+  }
+
+  const handleViewHistory = (sector: SectorPolygon) => {
+    // Redirigir a tareas filtradas por sector y autoexpandir primera tarea
+    router.push(`/tareas?sectorId=${encodeURIComponent(sector.id)}&autoExpand=1`)
   }
 
   return (
@@ -197,8 +203,28 @@ export default function SectorsView() {
       </div>
       <SectorsFilters filters={filters} onFilterChange={handleFilterChange} />
       <div className="bg-slate-800 shadow-xl rounded-lg p-0 overflow-hidden">
-        <SectorsTable sectors={filteredSectors} />
+        <SectorsTable 
+          sectors={filteredSectors}
+          onEdit={(sector) => {
+            setEditingSector(sector)
+          }}
+          onDelete={(sectorId) => {
+            setSectors((prev) => prev.filter((s) => s.id !== sectorId))
+          }}
+          onViewHistory={handleViewHistory}
+        />
       </div>
+      {editingSector && (
+        <EditSectorModal
+          isOpen={!!editingSector}
+          onOpenChange={() => setEditingSector(null)}
+          sector={editingSector}
+          onSave={(updated) => {
+            setSectors((prev) => prev.map((s) => (s.id === updated.id ? { ...s, ...updated } : s)))
+            setEditingSector(null)
+          }}
+        />
+      )}
     </div>
   )
 }

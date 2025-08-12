@@ -16,6 +16,7 @@ import { MoreHorizontal, Edit, Trash2, CheckCircle, Clock, AlertTriangle, Histor
 import type { Task } from "@/views/tasks-view"
 import type { SectorStatus } from "@/components/home/map-interactive-placeholder"
 import ConfirmDeleteDialog from "./confirm-delete-dialog"
+import { useNotifications } from "@/src/hooks"
 
 interface TasksTableProps {
   tasks: Task[]
@@ -33,6 +34,7 @@ const statusIcons: Record<SectorStatus, React.ReactElement> = {
 export default function TasksTable({ tasks, onEdit, onDelete, onFinish }: TasksTableProps) {
   const [deletingTask, setDeletingTask] = useState<Task | null>(null)
   const [visibleCount, setVisibleCount] = useState(10) // Para simular scroll infinito
+  const { showSimulatedFeature } = useNotifications()
 
   const loadMore = () => {
     setVisibleCount((prevCount) => prevCount + 10)
@@ -79,7 +81,7 @@ export default function TasksTable({ tasks, onEdit, onDelete, onFinish }: TasksT
                         <Edit className="mr-2 h-4 w-4" /> Editar
                       </DropdownMenuItem>
                       <DropdownMenuItem
-                        onClick={() => alert(`Historial de ${task.sectorName}`)}
+                        onClick={() => showSimulatedFeature(`Historial de ${task.sectorName}`)}
                         className="cursor-pointer hover:!bg-slate-700"
                       >
                         <History className="mr-2 h-4 w-4" /> Ver Historial

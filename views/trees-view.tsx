@@ -8,6 +8,7 @@ import StreetSectionView from "@/components/trees/street-section-view"
 import IndividualTreeView from "@/components/trees/individual-tree-view"
 import AddTreeModal from "@/components/trees/add-tree-modal"
 import type { TreeSection, StreetWithSections, IndividualTree } from "@/src/types"
+import { useNotifications } from "@/src/hooks"
 
 // Datos de ejemplo
 const sampleStreets: StreetWithSections[] = [
@@ -233,6 +234,7 @@ export default function TreesView() {
   const [streets, setStreets] = useState<StreetWithSections[]>(sampleStreets)
   const [individualTrees, setIndividualTrees] = useState<IndividualTree[]>(sampleIndividualTrees)
   const [isAddModalOpen, setIsAddModalOpen] = useState(false)
+  const { showTreeCreated, showSimulatedFeature } = useNotifications()
 
   const handleAddTree = (treeData: Omit<IndividualTree, "id">) => {
     const newTree: IndividualTree = {
@@ -241,12 +243,12 @@ export default function TreesView() {
     }
     setIndividualTrees((prev) => [...prev, newTree])
     // Aquí también podrías actualizar los conteos en la vista por tramos si corresponde
-    alert(`Árbol "${newTree.species}" en ${newTree.streetName} ${newTree.streetNumber} agregado.`)
+    showTreeCreated(newTree.species, `${newTree.streetName} ${newTree.streetNumber}`)
     setIsAddModalOpen(false)
   }
 
-  const handleImport = () => alert("Funcionalidad de Importar desde Excel (simulada).")
-  const handleExport = (format: "Excel" | "PDF") => alert(`Funcionalidad de Exportar a ${format} (simulada).`)
+  const handleImport = () => showSimulatedFeature("Importar desde Excel")
+  const handleExport = (format: "Excel" | "PDF") => showSimulatedFeature(`Exportar a ${format}`)
 
   return (
     <div className="space-y-6 p-1">

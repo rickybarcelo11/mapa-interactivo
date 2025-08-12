@@ -8,6 +8,7 @@ import ConfirmDeleteDialog from "@/components/tasks/confirm-delete-dialog" // Re
 import { Button } from "@/components/ui/button"
 import { PlusCircle } from "lucide-react"
 import type { Worker, Task } from "./tasks-view" // Reutilizamos tipos de TasksView
+import { useNotifications } from "@/src/hooks"
 
 // Datos de ejemplo (podrían venir de un contexto o API)
 const initialWorkers: Worker[] = [
@@ -163,6 +164,7 @@ export default function WorkersView() {
   const [editingWorker, setEditingWorker] = useState<Worker | null>(null)
   const [deletingWorker, setDeletingWorker] = useState<Worker | null>(null)
   const [filters, setFilters] = useState({ name: "", hasActiveTasks: false })
+  const { showWorkerHasActiveTasks } = useNotifications()
 
   const workerTasks = useMemo(() => {
     const map = new Map<string, Task[]>()
@@ -208,7 +210,7 @@ export default function WorkersView() {
       .get(worker.id)
       ?.some((task) => task.status === "pendiente" || task.status === "en proceso")
     if (activeTasks) {
-      alert(`El trabajador ${worker.name} tiene tareas activas y no puede ser eliminado.`)
+      showWorkerHasActiveTasks(worker.name)
       return
     }
     setDeletingWorker(worker)

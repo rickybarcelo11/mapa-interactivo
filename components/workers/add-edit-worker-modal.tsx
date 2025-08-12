@@ -16,6 +16,7 @@ import { Label } from "@/components/ui/label"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import type { Worker } from "@/views/workers-view" // Ajusta la ruta si es necesario
+import { useNotifications, useWorkerValidation } from "@/src/hooks"
 
 interface AddEditWorkerModalProps {
   isOpen: boolean
@@ -31,6 +32,8 @@ const initialFormData: Omit<Worker, "id"> = {
 
 export default function AddEditWorkerModal({ isOpen, onOpenChange, onSave, worker }: AddEditWorkerModalProps) {
   const [formData, setFormData] = useState<Omit<Worker, "id">>(initialFormData)
+  const { showRequiredFieldsError } = useNotifications()
+  const { validateWorkerForm } = useWorkerValidation()
 
   useEffect(() => {
     if (worker) {
@@ -46,13 +49,16 @@ export default function AddEditWorkerModal({ isOpen, onOpenChange, onSave, worke
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
-    if (!formData.name.trim()) {
-      alert("El nombre del trabajador es obligatorio.")
+    // Validación con Zod
+    const validated = validateWorkerForm(formData)
+    if (!validated) {
+      // Para compatibilidad, si falla, mostramos el requerido básico
+      if (!formData.name.trim()) showRequiredFieldsError()
       return
     }
     onSave({
       id: worker?.id || "", // El ID se manejará en la lógica de guardado de WorkersView
-      ...formData,
+      ...validated,
     })
   }
 
