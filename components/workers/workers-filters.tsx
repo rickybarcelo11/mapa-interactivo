@@ -1,7 +1,6 @@
 "use client"
 
-import type React from "react"
-
+import { useCallback, memo } from "react"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Switch } from "@/components/ui/switch"
@@ -13,18 +12,18 @@ interface WorkersFiltersProps {
   onFilterChange: (filters: { name: string; hasActiveTasks: boolean }) => void
 }
 
-export default function WorkersFilters({ filters, onFilterChange }: WorkersFiltersProps) {
-  const handleNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+function WorkersFilters({ filters, onFilterChange }: WorkersFiltersProps) {
+  const handleNameChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     onFilterChange({ ...filters, name: e.target.value })
-  }
+  }, [filters, onFilterChange])
 
-  const handleActiveTasksChange = (checked: boolean) => {
+  const handleActiveTasksChange = useCallback((checked: boolean) => {
     onFilterChange({ ...filters, hasActiveTasks: checked })
-  }
+  }, [filters, onFilterChange])
 
-  const clearFilters = () => {
+  const clearFilters = useCallback(() => {
     onFilterChange({ name: "", hasActiveTasks: false })
-  }
+  }, [onFilterChange])
 
   return (
     <div className="p-4 bg-slate-800 rounded-lg shadow-md space-y-4 md:space-y-0 md:flex md:items-center md:justify-between">
@@ -57,3 +56,5 @@ export default function WorkersFilters({ filters, onFilterChange }: WorkersFilte
     </div>
   )
 }
+
+export default memo(WorkersFilters)

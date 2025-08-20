@@ -21,6 +21,11 @@ interface SectorsState {
     status: string
     direccion: string
   }
+  // Cache para selectores memoizados
+  _filteredSectorsCache: {
+    key: string
+    result: SectorPolygon[]
+  } | null
 }
 
 interface SectorsActions {
@@ -42,11 +47,14 @@ interface SectorsActions {
   setSectors: (sectors: SectorPolygon[]) => void
   initializeSectors: () => void
   
-  // Getters computados
+  // Getters computados optimizados
   getFilteredSectors: () => SectorPolygon[]
   getSectorById: (id: string) => SectorPolygon | undefined
   getSectorsByType: (type: string) => SectorPolygon[]
   getSectorsByStatus: (status: string) => SectorPolygon[]
+  
+  // Limpiar cache
+  _clearCache: () => void
 }
 
 const initialState: SectorsState = {
@@ -59,7 +67,13 @@ const initialState: SectorsState = {
     type: 'todos',
     status: 'todos',
     direccion: ''
-  }
+  },
+  _filteredSectorsCache: null
+}
+
+// Función helper para generar clave de cache
+const generateCacheKey = (filters: SectorsState['filters']) => {
+  return `${filters.name}|${filters.type}|${filters.status}|${filters.direccion}`
 }
 
 export const useSectorsStore = create<SectorsState & SectorsActions>()(
@@ -73,10 +87,16 @@ export const useSectorsStore = create<SectorsState & SectorsActions>()(
       setSelectedSector: (sector) => set({ selectedSector: sector }),
 
       // Acciones de filtros
-      setFilters: (newFilters) => set((state) => ({
-        filters: { ...state.filters, ...newFilters }
-      })),
-      clearFilters: () => set({ filters: initialState.filters }),
+      setFilters: (newFilters) => {
+        set((state) => ({
+          filters: { ...state.filters, ...newFilters },
+          _filteredSectorsCache: null // Limpiar cache al cambiar filtros
+        }))
+      },
+      clearFilters: () => set({ 
+        filters: initialState.filters,
+        _filteredSectorsCache: null // Limpiar cache al limpiar filtros
+      }),
 
       // Acciones CRUD con validación
       addSector: (sectorData) => {
@@ -95,7 +115,8 @@ export const useSectorsStore = create<SectorsState & SectorsActions>()(
           
           set((state) => ({
             sectors: [...state.sectors, finalValidatedSector],
-            error: null
+            error: null,
+            _filteredSectorsCache: null // Limpiar cache al agregar sector
           }))
         } catch (error) {
           if (error instanceof Error) {
@@ -108,22 +129,16 @@ export const useSectorsStore = create<SectorsState & SectorsActions>()(
 
       updateSector: (sectorData) => {
         try {
-          // Validar datos de actualización
+          // Validar datos de entrada
           const validatedData = validateUpdateSector(sectorData)
           
           set((state) => {
-            const sectorIndex = state.sectors.findIndex(s => s.id === validatedData.id)
+            const sectorIndex = state.sectors.findIndex(s => s.id === sectorData.id)
             if (sectorIndex === -1) {
               throw new Error('Sector no encontrado')
             }
             
-            // Crear sector actualizado
-            const updatedSector: SectorPolygon = {
-              ...state.sectors[sectorIndex],
-              ...validatedData
-            }
-            
-            // Validar el sector actualizado
+            const updatedSector = { ...state.sectors[sectorIndex], ...validatedData }
             const finalValidatedSector = validateSector(updatedSector)
             
             const newSectors = [...state.sectors]
@@ -131,10 +146,9 @@ export const useSectorsStore = create<SectorsState & SectorsActions>()(
             
             return {
               sectors: newSectors,
-              selectedSector: state.selectedSector?.id === validatedData.id 
-                ? finalValidatedSector 
-                : state.selectedSector,
-              error: null
+              selectedSector: state.selectedSector?.id === sectorData.id ? finalValidatedSector : state.selectedSector,
+              error: null,
+              _filteredSectorsCache: null // Limpiar cache al actualizar sector
             }
           })
         } catch (error) {
@@ -150,7 +164,8 @@ export const useSectorsStore = create<SectorsState & SectorsActions>()(
         set((state) => ({
           sectors: state.sectors.filter(s => s.id !== id),
           selectedSector: state.selectedSector?.id === id ? null : state.selectedSector,
-          error: null
+          error: null,
+          _filteredSectorsCache: null // Limpiar cache al eliminar sector
         }))
       },
 
@@ -159,7 +174,11 @@ export const useSectorsStore = create<SectorsState & SectorsActions>()(
         try {
           // Validar todos los sectores
           const validatedSectors = sectors.map(sector => validateSector(sector))
-          set({ sectors: validatedSectors, error: null })
+          set({ 
+            sectors: validatedSectors, 
+            error: null,
+            _filteredSectorsCache: null // Limpiar cache al establecer sectores
+          })
         } catch (error) {
           if (error instanceof Error) {
             set({ error: `Error al establecer sectores: ${error.message}` })
@@ -182,7 +201,8 @@ export const useSectorsStore = create<SectorsState & SectorsActions>()(
           set({ 
             sectors: validatedSectors, 
             loading: false, 
-            error: null 
+            error: null,
+            _filteredSectorsCache: null // Limpiar cache al inicializar
           })
         } catch (error) {
           if (error instanceof Error) {
@@ -199,11 +219,18 @@ export const useSectorsStore = create<SectorsState & SectorsActions>()(
         }
       },
 
-      // Getters computados
+      // Getters computados optimizados con cache
       getFilteredSectors: () => {
-        const { sectors, filters } = get()
+        const { sectors, filters, _filteredSectorsCache } = get()
         
-        return sectors.filter(sector => {
+        // Verificar cache
+        const cacheKey = generateCacheKey(filters)
+        if (_filteredSectorsCache && _filteredSectorsCache.key === cacheKey) {
+          return _filteredSectorsCache.result
+        }
+        
+        // Calcular resultado
+        const result = sectors.filter(sector => {
           const nameMatch = !filters.name || 
             sector.name.toLowerCase().includes(filters.name.toLowerCase())
           
@@ -218,6 +245,11 @@ export const useSectorsStore = create<SectorsState & SectorsActions>()(
           
           return nameMatch && typeMatch && statusMatch && direccionMatch
         })
+        
+        // Guardar en cache
+        set({ _filteredSectorsCache: { key: cacheKey, result } })
+        
+        return result
       },
 
       getSectorById: (id) => {
@@ -233,7 +265,10 @@ export const useSectorsStore = create<SectorsState & SectorsActions>()(
       getSectorsByStatus: (status) => {
         const { sectors } = get()
         return sectors.filter(s => s.status === status)
-      }
+      },
+
+      // Limpiar cache
+      _clearCache: () => set({ _filteredSectorsCache: null })
     }),
     {
       name: 'sectors-store'

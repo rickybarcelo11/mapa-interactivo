@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useMemo, useState, Fragment } from "react"
+import { useEffect, useMemo, useState, Fragment, useCallback, memo } from "react"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Button } from "@/components/ui/button"
 import type { Task } from "@/src/types"
@@ -15,18 +15,97 @@ interface TasksExpandableListProps {
   onFinish: (taskId: string) => void
 }
 
-export default function TasksExpandableList({ tasks, autoExpandTaskId, onEdit, onDelete, onFinish }: TasksExpandableListProps) {
+// Componente memoizado para la fila de tarea
+const TaskRow = memo(({ 
+  task, 
+  isExpanded, 
+  onToggle, 
+  onEdit, 
+  onDelete, 
+  onFinish 
+}: {
+  task: Task
+  isExpanded: boolean
+  onToggle: (id: string) => void
+  onEdit: (task: Task) => void
+  onDelete: (taskId: string) => void
+  onFinish: (taskId: string) => void
+}) => {
+  const handleToggle = useCallback(() => {
+    onToggle(task.id)
+  }, [task.id, onToggle])
+
+  const handleEdit = useCallback(() => {
+    onEdit(task)
+  }, [task, onEdit])
+
+  const handleDelete = useCallback(() => {
+    onDelete(task.id)
+  }, [task.id, onDelete])
+
+  const handleFinish = useCallback(() => {
+    onFinish(task.id)
+  }, [task.id, onFinish])
+
+  const isCompleted = useMemo(() => task.status === "completado", [task.status])
+
+  return (
+    <Fragment key={task.id}>
+      <TableRow 
+        className="border-b border-slate-700 hover:bg-slate-700 cursor-pointer data-[state=selected]:bg-slate-600"
+        data-state={isExpanded ? "selected" : ""}
+        onClick={handleToggle}
+      >
+        <TableCell className="py-3 px-4">
+          {isExpanded ? (
+            <ChevronDown className="h-5 w-5 text-sky-400" />
+          ) : (
+            <ChevronRight className="h-5 w-5 text-slate-400" />
+          )}
+        </TableCell>
+        <TableCell className="font-medium text-sky-400 py-3 px-4">{task.sectorName}</TableCell>
+        <TableCell className="text-slate-300 py-3 px-4">{task.type}</TableCell>
+        <TableCell className="text-slate-300 py-3 px-4 capitalize">{task.status}</TableCell>
+        <TableCell className="text-slate-300 py-3 px-4">{task.assignedWorkerName}</TableCell>
+        <TableCell className="text-slate-300 py-3 px-4">{task.startDate}</TableCell>
+        <TableCell className="text-slate-300 py-3 px-4">{task.endDate || "N/A"}</TableCell>
+        <TableCell className="py-3 px-4 space-x-2" onClick={(e) => e.stopPropagation()}>
+          <Button size="sm" variant="outline" onClick={handleEdit}>Editar</Button>
+          {!isCompleted && (
+            <Button size="sm" onClick={handleFinish} className="bg-green-600 hover:bg-green-500">Finalizar</Button>
+          )}
+          <Button size="sm" variant="destructive" onClick={handleDelete}>Eliminar</Button>
+        </TableCell>
+      </TableRow>
+      {isExpanded && (
+        <TableRow key={`${task.id}-expanded`} className="bg-slate-750 border-b-2 border-sky-500">
+          <TableCell colSpan={8} className="p-4" onClick={(e) => e.stopPropagation()}>
+            <TaskHistoryPanel task={task} />
+          </TableCell>
+        </TableRow>
+      )}
+    </Fragment>
+  )
+})
+
+TaskRow.displayName = "TaskRow"
+
+function TasksExpandableList({ tasks, autoExpandTaskId, onEdit, onDelete, onFinish }: TasksExpandableListProps) {
   const [expandedTaskId, setExpandedTaskId] = useState<string | null>(null)
 
   useEffect(() => {
     if (autoExpandTaskId) setExpandedTaskId(autoExpandTaskId)
   }, [autoExpandTaskId])
 
-  if (tasks.length === 0) {
+  const toggle = useCallback((id: string) => {
+    setExpandedTaskId(prev => prev === id ? null : id)
+  }, [])
+
+  const memoizedTasks = useMemo(() => tasks, [tasks])
+
+  if (memoizedTasks.length === 0) {
     return <p className="p-4 text-center text-slate-400">No se encontraron tareas.</p>
   }
-
-  const toggle = (id: string) => setExpandedTaskId(expandedTaskId === id ? null : id)
 
   return (
     <div className="overflow-x-auto">
@@ -44,45 +123,21 @@ export default function TasksExpandableList({ tasks, autoExpandTaskId, onEdit, o
           </TableRow>
         </TableHeader>
         <TableBody>
-          {tasks.map((task) => (
-            <Fragment key={task.id}>
-              <TableRow 
-                className="border-b border-slate-700 hover:bg-slate-700 cursor-pointer data-[state=selected]:bg-slate-600"
-                data-state={expandedTaskId === task.id ? "selected" : ""}
-                onClick={() => toggle(task.id)}
-              >
-                <TableCell className="py-3 px-4">
-                  {expandedTaskId === task.id ? (
-                    <ChevronDown className="h-5 w-5 text-sky-400" />
-                  ) : (
-                    <ChevronRight className="h-5 w-5 text-slate-400" />
-                  )}
-                </TableCell>
-                <TableCell className="font-medium text-sky-400 py-3 px-4">{task.sectorName}</TableCell>
-                <TableCell className="text-slate-300 py-3 px-4">{task.type}</TableCell>
-                <TableCell className="text-slate-300 py-3 px-4 capitalize">{task.status}</TableCell>
-                <TableCell className="text-slate-300 py-3 px-4">{task.assignedWorkerName}</TableCell>
-                <TableCell className="text-slate-300 py-3 px-4">{task.startDate}</TableCell>
-                <TableCell className="text-slate-300 py-3 px-4">{task.endDate || "N/A"}</TableCell>
-                <TableCell className="py-3 px-4 space-x-2" onClick={(e) => e.stopPropagation()}>
-                  <Button size="sm" variant="outline" onClick={() => onEdit(task)}>Editar</Button>
-                  {task.status !== "completado" && (
-                    <Button size="sm" onClick={() => onFinish(task.id)} className="bg-green-600 hover:bg-green-500">Finalizar</Button>
-                  )}
-                  <Button size="sm" variant="destructive" onClick={() => onDelete(task.id)}>Eliminar</Button>
-                </TableCell>
-              </TableRow>
-              {expandedTaskId === task.id && (
-                <TableRow key={`${task.id}-expanded`} className="bg-slate-750 border-b-2 border-sky-500">
-                  <TableCell colSpan={8} className="p-4" onClick={(e) => e.stopPropagation()}>
-                    <TaskHistoryPanel task={task} />
-                  </TableCell>
-                </TableRow>
-              )}
-            </Fragment>
+          {memoizedTasks.map((task) => (
+            <TaskRow
+              key={task.id}
+              task={task}
+              isExpanded={expandedTaskId === task.id}
+              onToggle={toggle}
+              onEdit={onEdit}
+              onDelete={onDelete}
+              onFinish={onFinish}
+            />
           ))}
         </TableBody>
       </Table>
     </div>
   )
 }
+
+export default memo(TasksExpandableList)

@@ -1,5 +1,5 @@
 "use client"
-import { useState, useEffect } from "react"
+import { useState, useEffect, useCallback, useMemo, memo } from "react"
 import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Button } from "@/components/ui/button"
@@ -18,7 +18,7 @@ interface TasksFiltersProps {
   allTasks: Task[]
 }
 
-export default function TasksFilters({ workers, sectors, onFilterChange, allTasks }: TasksFiltersProps) {
+function TasksFilters({ workers, sectors, onFilterChange, allTasks }: TasksFiltersProps) {
   const [text, setText] = useState("")
   const [status, setStatus] = useState("todos")
   const [type, setType] = useState("todos")
@@ -26,7 +26,43 @@ export default function TasksFilters({ workers, sectors, onFilterChange, allTask
   const [workerId, setWorkerId] = useState("todos")
   const [dateRange, setDateRange] = useState<DateRange | undefined>()
 
-  const uniqueSectors = [...new Map(sectors.map((item) => [item["id"], item])).values()]
+  const uniqueSectors = useMemo(() => 
+    [...new Map(sectors.map((item) => [item["id"], item])).values()], 
+    [sectors]
+  )
+
+  const clearFilters = useCallback(() => {
+    setText("")
+    setStatus("todos")
+    setType("todos")
+    setSectorId("todos")
+    setWorkerId("todos")
+    setDateRange(undefined)
+  }, [])
+
+  const handleTextChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    setText(e.target.value)
+  }, [])
+
+  const handleStatusChange = useCallback((value: string) => {
+    setStatus(value)
+  }, [])
+
+  const handleTypeChange = useCallback((value: string) => {
+    setType(value)
+  }, [])
+
+  const handleSectorChange = useCallback((value: string) => {
+    setSectorId(value)
+  }, [])
+
+  const handleWorkerChange = useCallback((value: string) => {
+    setWorkerId(value)
+  }, [])
+
+  const handleDateRangeChange = useCallback((range: DateRange | undefined) => {
+    setDateRange(range)
+  }, [])
 
   useEffect(() => {
     const filtered = allTasks.filter((task) => {
@@ -56,14 +92,15 @@ export default function TasksFilters({ workers, sectors, onFilterChange, allTask
     onFilterChange(filtered)
   }, [text, status, type, sectorId, workerId, dateRange, allTasks, onFilterChange])
 
-  const clearFilters = () => {
-    setText("")
-    setStatus("todos")
-    setType("todos")
-    setSectorId("todos")
-    setWorkerId("todos")
-    setDateRange(undefined)
-  }
+  const dateRangeText = useMemo(() => {
+    if (dateRange?.from) {
+      if (dateRange.to) {
+        return `${format(dateRange.from, "LLL dd, y", { locale: es })} - ${format(dateRange.to, "LLL dd, y", { locale: es })}`
+      }
+      return format(dateRange.from, "LLL dd, y", { locale: es })
+    }
+    return "Rango de fechas"
+  }, [dateRange])
 
   return (
     <div className="p-4 bg-slate-800 rounded-lg shadow-md space-y-4">
@@ -71,10 +108,10 @@ export default function TasksFilters({ workers, sectors, onFilterChange, allTask
         <Input
           placeholder="Búsqueda por texto libre..."
           value={text}
-          onChange={(e) => setText(e.target.value)}
+          onChange={handleTextChange}
           className="bg-slate-700 border-slate-600 text-slate-50 placeholder:text-slate-400 lg:col-span-3"
         />
-        <Select value={status} onValueChange={setStatus}>
+        <Select value={status} onValueChange={handleStatusChange}>
           <SelectTrigger className="bg-slate-700 border-slate-600 text-slate-50">
             <SelectValue placeholder="Estado" />
           </SelectTrigger>
@@ -85,7 +122,7 @@ export default function TasksFilters({ workers, sectors, onFilterChange, allTask
             <SelectItem value="completado">Completado</SelectItem>
           </SelectContent>
         </Select>
-        <Select value={type} onValueChange={setType}>
+        <Select value={type} onValueChange={handleTypeChange}>
           <SelectTrigger className="bg-slate-700 border-slate-600 text-slate-50">
             <SelectValue placeholder="Tipo" />
           </SelectTrigger>
@@ -95,7 +132,7 @@ export default function TasksFilters({ workers, sectors, onFilterChange, allTask
             <SelectItem value="Corte de pasto">Corte de pasto</SelectItem>
           </SelectContent>
         </Select>
-        <Select value={sectorId} onValueChange={setSectorId}>
+        <Select value={sectorId} onValueChange={handleSectorChange}>
           <SelectTrigger className="bg-slate-700 border-slate-600 text-slate-50">
             <SelectValue placeholder="Sector" />
           </SelectTrigger>
@@ -108,7 +145,7 @@ export default function TasksFilters({ workers, sectors, onFilterChange, allTask
             ))}
           </SelectContent>
         </Select>
-        <Select value={workerId} onValueChange={setWorkerId}>
+        <Select value={workerId} onValueChange={handleWorkerChange}>
           <SelectTrigger className="bg-slate-700 border-slate-600 text-slate-50">
             <SelectValue placeholder="Trabajador" />
           </SelectTrigger>
@@ -128,22 +165,11 @@ export default function TasksFilters({ workers, sectors, onFilterChange, allTask
               className="w-full justify-start text-left font-normal bg-slate-700 border-slate-600 text-slate-50 hover:bg-slate-600 hover:text-slate-50"
             >
               <CalendarIcon className="mr-2 h-4 w-4" />
-              {dateRange?.from ? (
-                dateRange.to ? (
-                  <>
-                    {format(dateRange.from, "LLL dd, y", { locale: es })} -{" "}
-                    {format(dateRange.to, "LLL dd, y", { locale: es })}
-                  </>
-                ) : (
-                  format(dateRange.from, "LLL dd, y", { locale: es })
-                )
-              ) : (
-                <span>Rango de fechas</span>
-              )}
+              {dateRangeText}
             </Button>
           </PopoverTrigger>
           <PopoverContent className="w-auto p-0 bg-slate-800 border-slate-700" align="start">
-            <Calendar mode="range" selected={dateRange} onSelect={setDateRange} numberOfMonths={2} locale={es} />
+            <Calendar mode="range" selected={dateRange} onSelect={handleDateRangeChange} numberOfMonths={2} locale={es} />
           </PopoverContent>
         </Popover>
         <Button
@@ -157,3 +183,5 @@ export default function TasksFilters({ workers, sectors, onFilterChange, allTask
     </div>
   )
 }
+
+export default memo(TasksFilters)

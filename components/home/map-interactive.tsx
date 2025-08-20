@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect, useRef, Fragment } from "react"
+import { useState, useEffect, useRef, Fragment, useCallback, useMemo, memo } from "react"
 import { MapContainer, TileLayer, Polygon, useMap, useMapEvents, Marker, Polyline } from "react-leaflet"
 import "leaflet/dist/leaflet.css"
 import type { SectorPolygon } from "@/src/types"
@@ -17,20 +17,22 @@ const toLatLngArray = (path: { lat: number; lng: number }[]) =>
   path.map((p) => [p.lat, p.lng] as [number, number])
 
 // Componente para manejar el dibujo
-function DrawingHandler({ isDrawingMode, onDrawingComplete }: { 
+const DrawingHandler = memo(({ isDrawingMode, onDrawingComplete }: { 
   isDrawingMode: boolean; 
   onDrawingComplete: (path: { lat: number; lng: number }[]) => void 
-}) {
+}) => {
   const [drawingPoints, setDrawingPoints] = useState<[number, number][]>([])
   const map = useMap()
 
+  const handleMapClick = useCallback((e: any) => {
+    if (!isDrawingMode) return
+    
+    const { lat, lng } = e.latlng
+    setDrawingPoints(prev => [...prev, [lat, lng]])
+  }, [isDrawingMode])
+
   useMapEvents({
-    click: (e) => {
-      if (!isDrawingMode) return
-      
-      const { lat, lng } = e.latlng
-      setDrawingPoints(prev => [...prev, [lat, lng]])
-    },
+    click: handleMapClick,
   })
 
   // Limpiar puntos cuando se desactiva el modo dibujo
@@ -50,7 +52,7 @@ function DrawingHandler({ isDrawingMode, onDrawingComplete }: {
   }, [drawingPoints, isDrawingMode, onDrawingComplete])
 
   // Solo crea el icono si estamos en el cliente
-  const getMarkerIcon = () => {
+  const getMarkerIcon = useCallback(() => {
     if (typeof window === "undefined") return undefined;
     // Usar require para evitar SSR
     const L = require("leaflet");
@@ -67,12 +69,14 @@ function DrawingHandler({ isDrawingMode, onDrawingComplete }: {
       iconSize: [12, 12],
       iconAnchor: [6, 6]
     });
-  };
+  }, []);
+
+  const memoizedDrawingPoints = useMemo(() => drawingPoints, [drawingPoints])
 
   return (
     <>
       {/* Marcadores de los puntos dibujados */}
-      {drawingPoints.map((point, index) => (
+      {memoizedDrawingPoints.map((point, index) => (
         <Marker
           key={`drawing-point-${index}`}
           position={point}
@@ -81,9 +85,9 @@ function DrawingHandler({ isDrawingMode, onDrawingComplete }: {
       ))}
       
       {/* Línea que conecta los puntos */}
-      {drawingPoints.length > 1 && (
+      {memoizedDrawingPoints.length > 1 && (
         <Polyline
-          positions={drawingPoints}
+          positions={memoizedDrawingPoints}
           pathOptions={{
             color: '#3b82f6',
             weight: 3,
@@ -94,7 +98,9 @@ function DrawingHandler({ isDrawingMode, onDrawingComplete }: {
       )}
     </>
   )
-}
+})
+
+DrawingHandler.displayName = "DrawingHandler"
 
 // Calcula el centroide de un polígono
 function getPolygonCentroid(path: { lat: number; lng: number }[]): [number, number] {
@@ -106,7 +112,77 @@ function getPolygonCentroid(path: { lat: number; lng: number }[]): [number, numb
   return [x / n, y / n];
 }
 
-export default function MapInteractive({ 
+// Componente memoizado para el polígono de sector
+const SectorPolygon = memo(({ 
+  sector, 
+  onPolygonClick 
+}: { 
+  sector: SectorPolygon; 
+  onPolygonClick: (sector: SectorPolygon) => void 
+}) => {
+  const handleClick = useCallback(() => {
+    onPolygonClick(sector)
+  }, [sector, onPolygonClick])
+
+  const positions = useMemo(() => toLatLngArray(sector.path), [sector.path])
+  
+  const pathOptions = useMemo(() => ({
+    color:
+      sector.status === "pendiente"
+        ? "#ef4444"
+        : sector.status === "en proceso"
+        ? "#eab308"
+        : "#22c55e",
+    fillOpacity: 0.5,
+  }), [sector.status])
+
+  const centroid = useMemo(() => getPolygonCentroid(sector.path), [sector.path])
+
+  const getLabelIcon = useCallback(() => {
+    if (typeof window === "undefined") return undefined;
+    const L = require("leaflet");
+    return L.divIcon({
+      className: 'sector-label-marker',
+      html: `<div style="
+        background: rgba(30,41,59,0.85);
+        color: #fff;
+        font-size: 0.95rem;
+        font-weight: 600;
+        padding: 2px 10px;
+        border-radius: 6px;
+        text-align: center;
+        text-transform: uppercase;
+        box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+        pointer-events: none;
+      ">${sector.name}</div>`,
+      iconSize: [120, 28],
+      iconAnchor: [60, 14],
+    });
+  }, [sector.name]);
+
+  return (
+    <Fragment key={sector.id}>
+      <Polygon
+        positions={positions}
+        pathOptions={pathOptions}
+        eventHandlers={{
+          click: handleClick,
+        }}
+      />
+      {/* Nombre del sector centrado */}
+      <Marker
+        key={sector.id + "-label"}
+        position={centroid}
+        icon={getLabelIcon()}
+        interactive={false}
+      />
+    </Fragment>
+  )
+})
+
+SectorPolygon.displayName = "SectorPolygon"
+
+function MapInteractive({ 
   sectors, 
   onPolygonClick, 
   isDrawingMode = false,
@@ -126,12 +202,12 @@ export default function MapInteractive({
     if (!isDrawingMode) setDrawingPoints([])
   }, [isDrawingMode])
 
-  const handleMapClick = (e: any) => {
+  const handleMapClick = useCallback((e: any) => {
     if (!isDrawingMode) return;
     const { lat, lng } = e.latlng;
     setDrawingPoints((prev) => [...prev, [lat, lng]]);
     setShowFinishButton(true);
-  };
+  }, [isDrawingMode]);
 
   // Agregar y limpiar el evento de click al mapa solo en modo dibujo
   useEffect(() => {
@@ -142,16 +218,18 @@ export default function MapInteractive({
         map.off('click', handleMapClick);
       };
     }
-  }, [isDrawingMode]);
+  }, [isDrawingMode, handleMapClick]);
 
-  const handleFinishDrawing = () => {
+  const handleFinishDrawing = useCallback(() => {
     if (drawingPoints.length >= 3 && onDrawingComplete) {
       const path = drawingPoints.map(([lat, lng]) => ({ lat, lng }));
       onDrawingComplete(path);
       setDrawingPoints([]);
       setShowFinishButton(false);
     }
-  };
+  }, [drawingPoints, onDrawingComplete]);
+
+  const memoizedSectors = useMemo(() => sectors, [sectors])
 
   return (
     <div className="flex-grow rounded-lg shadow-xl relative overflow-hidden" style={{ height: 770, width: '100%' }}>
@@ -181,51 +259,12 @@ export default function MapInteractive({
           attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
           url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
         />
-        {sectors.map((sector) => (
-          <Fragment key={sector.id}>
-            <Polygon
-              positions={toLatLngArray(sector.path)}
-              pathOptions={{
-                color:
-                  sector.status === "pendiente"
-                    ? "#ef4444"
-                    : sector.status === "en proceso"
-                    ? "#eab308"
-                    : "#22c55e",
-                fillOpacity: 0.5,
-              }}
-              eventHandlers={{
-                click: () => onPolygonClick(sector),
-              }}
-            />
-            {/* Nombre del sector centrado */}
-            <Marker
-              key={sector.id + "-label"}
-              position={getPolygonCentroid(sector.path)}
-              icon={(() => {
-                if (typeof window === "undefined") return undefined;
-                const L = require("leaflet");
-                return L.divIcon({
-                  className: 'sector-label-marker',
-                  html: `<div style="
-                    background: rgba(30,41,59,0.85);
-                    color: #fff;
-                    font-size: 0.95rem;
-                    font-weight: 600;
-                    padding: 2px 10px;
-                    border-radius: 6px;
-                    text-align: center;
-                    text-transform: uppercase;
-                    box-shadow: 0 2px 6px rgba(0,0,0,0.15);
-                    pointer-events: none;
-                  ">${sector.name}</div>`,
-                  iconSize: [120, 28],
-                  iconAnchor: [60, 14],
-                });
-              })()}
-              interactive={false}
-            />
-          </Fragment>
+        {memoizedSectors.map((sector) => (
+          <SectorPolygon
+            key={sector.id}
+            sector={sector}
+            onPolygonClick={onPolygonClick}
+          />
         ))}
         {/* Dibujo en curso */}
         {isDrawingMode && drawingPoints.length > 0 && (
@@ -274,5 +313,4 @@ export default function MapInteractive({
   )
 }
 
-// Nota: Si usas Next.js, asegúrate de que este componente solo se renderice en el cliente (ya está con "use client").
-// Si necesitas ajustar la proyección de coordenadas, puedes hacerlo en toLatLngArray o usando una librería como proj4. 
+export default memo(MapInteractive) 

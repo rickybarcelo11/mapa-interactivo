@@ -1,33 +1,35 @@
 "use client"
 
-import type React from "react"
-
+import { useCallback, useMemo, memo } from "react"
 import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Button } from "@/components/ui/button"
 import { X } from "lucide-react"
-import type { SectorFiltersState } from "@/views/sectors-view" // Ajusta la ruta si es necesario
+import type { SectorFiltersState } from "@/views/sectors-view"
 
 interface SectorsFiltersProps {
   filters: SectorFiltersState
   onFilterChange: (newFilters: Partial<SectorFiltersState>) => void
 }
 
-const sectorTypes = ["todos", "Poda", "Corte de pasto"] // "todos" para no filtrar
-const sectorStatuses = ["todos", "pendiente", "en proceso", "completado"] // "todos" para no filtrar
+const sectorTypes = ["todos", "Poda", "Corte de pasto"]
+const sectorStatuses = ["todos", "pendiente", "en proceso", "completado"]
 
-export default function SectorsFilters({ filters, onFilterChange }: SectorsFiltersProps) {
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+function SectorsFilters({ filters, onFilterChange }: SectorsFiltersProps) {
+  const handleInputChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     onFilterChange({ [e.target.name]: e.target.value })
-  }
+  }, [onFilterChange])
 
-  const handleSelectChange = (name: keyof SectorFiltersState, value: string) => {
+  const handleSelectChange = useCallback((name: keyof SectorFiltersState, value: string) => {
     onFilterChange({ [name]: value })
-  }
+  }, [onFilterChange])
 
-  const clearFilters = () => {
+  const clearFilters = useCallback(() => {
     onFilterChange({ nombre: "", tipo: "todos", estado: "todos", direccion: "" })
-  }
+  }, [onFilterChange])
+
+  const memoizedSectorTypes = useMemo(() => sectorTypes, [])
+  const memoizedSectorStatuses = useMemo(() => sectorStatuses, [])
 
   return (
     <div className="p-4 bg-slate-800 rounded-lg shadow-md space-y-4">
@@ -45,7 +47,7 @@ export default function SectorsFilters({ filters, onFilterChange }: SectorsFilte
             <SelectValue placeholder="Tipo de sector" />
           </SelectTrigger>
           <SelectContent className="bg-slate-700 text-slate-50 border-slate-600">
-            {sectorTypes.map((type) => (
+            {memoizedSectorTypes.map((type) => (
               <SelectItem key={type} value={type} className="capitalize hover:bg-slate-600">
                 {type === "todos" ? "Todos los Tipos" : type}
               </SelectItem>
@@ -57,7 +59,7 @@ export default function SectorsFilters({ filters, onFilterChange }: SectorsFilte
             <SelectValue placeholder="Estado" />
           </SelectTrigger>
           <SelectContent className="bg-slate-700 text-slate-50 border-slate-600">
-            {sectorStatuses.map((status) => (
+            {memoizedSectorStatuses.map((status) => (
               <SelectItem key={status} value={status} className="capitalize hover:bg-slate-600">
                 {status === "todos" ? "Todos los Estados" : status}
               </SelectItem>
@@ -81,11 +83,9 @@ export default function SectorsFilters({ filters, onFilterChange }: SectorsFilte
         >
           <X className="mr-2 h-4 w-4" /> Limpiar Filtros
         </Button>
-        {/* El botón de búsqueda podría ser útil si el filtrado no es en tiempo real */}
-        {/* <Button className="bg-sky-500 hover:bg-sky-600 text-white">
-        <Search className="mr-2 h-4 w-4" /> Buscar
-      </Button> */}
       </div>
     </div>
   )
 }
+
+export default memo(SectorsFilters)
