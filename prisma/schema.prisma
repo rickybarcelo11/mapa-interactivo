@@ -1,0 +1,84 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+/// Estados utilizados en sectores y tareas
+enum Status {
+  pendiente
+  en_proceso
+  completado
+}
+
+/// Tipos de sector
+enum SectorType {
+  Poda
+  Corte_de_pasto
+}
+
+model Sector {
+  id            String   @id @default(cuid())
+  name          String
+  type          SectorType
+  status        Status
+  /// Polígono de coordenadas en formato [{ lat: number, lng: number }, ...]
+  path          Json
+  direccion     String?
+  observaciones String?
+
+  tasks         Task[]
+
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+}
+
+model Worker {
+  id            String   @id @default(cuid())
+  name          String
+  observaciones String?
+
+  tasks         Task[]   @relation("TaskAssignedWorker")
+
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+}
+
+model Task {
+  id                  String    @id @default(cuid())
+  // Relación con Sector
+  sectorId            String
+  sector              Sector    @relation(fields: [sectorId], references: [id])
+  // Denormalizado para compatibilidad con la UI actual
+  sectorName          String
+
+  type                String
+  status              Status
+
+  // Fechas (se mapearán a strings YYYY-MM-DD en la capa de servicios)
+  startDate           DateTime
+  endDate             DateTime?
+
+  // Relación con Worker
+  assignedWorkerId    String
+  assignedWorker      Worker    @relation("TaskAssignedWorker", fields: [assignedWorkerId], references: [id])
+  // Denormalizado para compatibilidad con la UI actual
+  assignedWorkerName  String
+
+  observations        String?
+
+  createdAt           DateTime  @default(now())
+  updatedAt           DateTime  @updatedAt
+
+  @@index([sectorId])
+  @@index([assignedWorkerId])
+}

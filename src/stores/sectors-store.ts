@@ -188,34 +188,15 @@ export const useSectorsStore = create<SectorsState & SectorsActions>()(
         }
       },
 
-      initializeSectors: () => {
+      initializeSectors: async () => {
         set({ loading: true, error: null })
-        
         try {
-          // Importar datos de ejemplo
-          const { sectorsData } = require('../../data/sectors.data')
-          
-          // Validar todos los sectores
-          const validatedSectors = sectorsData.map((sector: any) => validateSector(sector))
-          
-          set({ 
-            sectors: validatedSectors, 
-            loading: false, 
-            error: null,
-            _filteredSectorsCache: null // Limpiar cache al inicializar
-          })
+          const { getSectors } = await import('../services/provider')
+          const data = await getSectors()
+          const validated = data.map((s: any) => validateSector(s))
+          set({ sectors: validated, loading: false, error: null, _filteredSectorsCache: null })
         } catch (error) {
-          if (error instanceof Error) {
-            set({ 
-              error: `Error al inicializar sectores: ${error.message}`, 
-              loading: false 
-            })
-          } else {
-            set({ 
-              error: 'Error inesperado al inicializar sectores', 
-              loading: false 
-            })
-          }
+          set({ error: error instanceof Error ? error.message : 'Error al inicializar sectores', loading: false })
         }
       },
 

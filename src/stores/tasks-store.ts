@@ -241,33 +241,15 @@ export const useTasksStore = create<TasksState & TasksActions>()(
         }
       },
 
-      initializeTasks: () => {
+      initializeTasks: async () => {
         set({ loading: true, error: null })
-        
         try {
-          // Importar datos de ejemplo
-          const { tasksData } = require('../../data/tasks.data')
-          
-          // Validar todas las tareas
-          const validatedTasks = tasksData.map((task: any) => validateTask(task))
-          
-          set({ 
-            tasks: validatedTasks, 
-            loading: false, 
-            error: null 
-          })
+          const { getTasks } = await import('../services/provider')
+          const data = await getTasks()
+          const validated = data.map((t: any) => validateTask(t))
+          set({ tasks: validated, loading: false, error: null })
         } catch (error) {
-          if (error instanceof Error) {
-            set({ 
-              error: `Error al inicializar tareas: ${error.message}`, 
-              loading: false 
-            })
-          } else {
-            set({ 
-              error: 'Error inesperado al inicializar tareas', 
-              loading: false 
-            })
-          }
+          set({ error: error instanceof Error ? error.message : 'Error al inicializar tareas', loading: false })
         }
       },
 

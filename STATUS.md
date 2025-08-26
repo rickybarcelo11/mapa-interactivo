@@ -1,6 +1,6 @@
 # Estado del Proyecto (bitácora)
 
-Fecha: 2025-08-12
+Fecha: 2025-08-26
 
 ## Resumen de la sesión
 
@@ -19,6 +19,7 @@ Fecha: 2025-08-12
 - **SEGURIDAD API KEY**: Configuración de variables de entorno para proteger Google Maps API key.
 - Código subido a main: repo `rickybarcelo11/mapa-interactivo` actualizado.
 
+<<<<<<< HEAD
 ## 🔐 Configuración de Seguridad - Google Maps API Key
 
 ### **⚠️ PROBLEMA IDENTIFICADO:**
@@ -310,6 +311,48 @@ googleMapsApiKey: process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || "",
 - **Filtros complejos**: Reducción de tiempo de respuesta en filtros múltiples
 - **Mapa interactivo**: Mejor rendimiento con muchos polígonos
 - **Dispositivos móviles**: Mejor experiencia en hardware limitado
+=======
+## Ruta de integración: Neon (PostgreSQL) + Prisma
+
+Pasos seguros (no rompen el frontend; los mocks siguen activos hasta el final):
+
+1. Crear base de datos en Neon y copiar `DATABASE_URL`.
+2. Variables de entorno
+   - En `frontend/.env.local`:
+     ```
+     DATABASE_URL="postgresql://..."
+     NEXT_PUBLIC_USE_MOCKS=true
+     ```
+3. Instalar y preparar Prisma
+   ```bash
+   cd frontend
+   npm i @prisma/client
+   npm i -D prisma
+   npx prisma init --datasource-provider postgresql
+   ```
+4. Modelado inicial en `prisma/schema.prisma` (entidades: `Sector`, `Trabajador`, `Tarea`, `Arbol`).
+5. Migrar y generar
+   ```bash
+   npx prisma migrate dev --name init
+   npx prisma generate
+   ```
+6. Cliente Prisma singleton en `src/server/db/prisma.ts`.
+7. Seed opcional coherente con la UI en `prisma/seed.ts` y script `npm run prisma:seed`.
+8. Capa de servicios en `src/services/*` (CRUD por entidad, validación con Zod en I/O).
+9. Endpoints API en `app/api/*/route.ts` con Zod y `export const runtime = 'nodejs'`.
+10. Provider de datos
+    - Si `NEXT_PUBLIC_USE_MOCKS=true` → usar mocks actuales (UI intacta).
+    - Si `false` → usar servicios/API (sin cambiar stores ni componentes).
+11. QA
+    - Probar con el flag en `false`; rollback inmediato volviendo a `true` si algo falla.
+12. Deploy
+    - Configurar envs en Vercel (incl. `DATABASE_URL`).
+    - Migraciones:
+      ```bash
+      npx prisma migrate deploy
+      ```
+    - Neon ya provee pooling para conexiones en serverless.
+>>>>>>> d35cd68 (Instalacion de Prisma y Conexion a database Neon)
 
 ## Pendientes / Próximos pasos
 

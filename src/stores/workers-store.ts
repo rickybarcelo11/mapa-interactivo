@@ -166,33 +166,15 @@ export const useWorkersStore = create<WorkersState & WorkersActions>()(
         }
       },
 
-      initializeWorkers: () => {
+      initializeWorkers: async () => {
         set({ loading: true, error: null })
-        
         try {
-          // Importar datos de ejemplo
-          const { workersData } = require('../../data/workers.data')
-          
-          // Validar todos los trabajadores
-          const validatedWorkers = workersData.map((worker: any) => validateWorker(worker))
-          
-          set({ 
-            workers: validatedWorkers, 
-            loading: false, 
-            error: null 
-          })
+          const { getWorkers } = await import('../services/provider')
+          const data = await getWorkers()
+          const validated = data.map((w: any) => validateWorker(w))
+          set({ workers: validated, loading: false, error: null })
         } catch (error) {
-          if (error instanceof Error) {
-            set({ 
-              error: `Error al inicializar trabajadores: ${error.message}`, 
-              loading: false 
-            })
-          } else {
-            set({ 
-              error: 'Error inesperado al inicializar trabajadores', 
-              loading: false 
-            })
-          }
+          set({ error: error instanceof Error ? error.message : 'Error al inicializar trabajadores', loading: false })
         }
       },
 
