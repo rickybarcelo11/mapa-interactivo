@@ -1,305 +1,16 @@
 "use client"
 
-import { useState, useCallback } from "react"
+import { useState, useCallback, useEffect } from "react"
 import ReportFilters from "@/components/reports/report-filters"
 import ReportSummary from "@/components/reports/report-summary"
 import ReportCharts from "@/components/reports/report-charts"
 import ReportTasksTable from "@/components/reports/report-tasks-table"
 import { Button } from "@/components/ui/button"
 import { Download, FileText, FileSpreadsheet } from "lucide-react"
-import type { Task, Worker } from "./tasks-view" // Reutilizar tipos
-import type { SectorPolygon, SectorStatus } from "@/components/home/map-interactive-placeholder" // Reutilizar tipos
+import type { Task, Worker, SectorPolygon, SectorStatus } from "@/src/types"
 import { useNotifications } from "@/src/hooks"
 
-// Usaremos los mismos datos de ejemplo que en TasksView para simular
-const sampleWorkers: Worker[] = [
-  { id: "w1", name: "Juan Pérez" },
-  { id: "w2", name: "María García" },
-  { id: "w3", name: "Carlos López" },
-  { id: "w4", name: "Ana Martínez" },
-  { id: "w5", name: "Laura Gómez" },
-  { id: "w6", name: "David Fernández" },
-]
-
-const sampleSectorsForReport: Array<Pick<SectorPolygon, "id" | "name">> = [
-  { id: "1", name: "Sector Alpha" },
-  { id: "2", name: "Sector Beta" },
-  { id: "3", name: "Sector Gamma" },
-  { id: "4", name: "Sector Delta" },
-  { id: "5", name: "Sector Epsilon" },
-  { id: "6", name: "Sector Zeta" },
-  { id: "7", name: "Sector Eta" },
-  { id: "8", name: "Sector Theta" },
-  { id: "9", name: "Sector Iota" },
-  { id: "10", name: "Sector Kappa" },
-]
-
-const allTasksForReport: Task[] = [
-  {
-    id: "t1",
-    sectorId: "1",
-    sectorName: "Sector Alpha",
-    type: "Poda",
-    status: "en proceso",
-    startDate: "2024-05-01",
-    endDate: null,
-    assignedWorkerId: "w1",
-    assignedWorkerName: "Juan Pérez",
-    observations: "Revisar árbol grande.",
-  },
-  {
-    id: "t2",
-    sectorId: "2",
-    sectorName: "Sector Beta",
-    type: "Corte de pasto",
-    status: "pendiente",
-    startDate: "2024-05-10",
-    endDate: null,
-    assignedWorkerId: "w2",
-    assignedWorkerName: "María García",
-    observations: "Césped alto.",
-  },
-  {
-    id: "t3",
-    sectorId: "3",
-    sectorName: "Sector Gamma",
-    type: "Poda",
-    status: "completado",
-    startDate: "2024-04-15",
-    endDate: "2024-04-20",
-    assignedWorkerId: "w1",
-    assignedWorkerName: "Juan Pérez",
-    observations: "Finalizada.",
-  },
-  {
-    id: "t4",
-    sectorId: "1",
-    sectorName: "Sector Alpha",
-    type: "Corte de pasto",
-    status: "completado",
-    startDate: "2024-04-25",
-    endDate: "2024-04-28",
-    assignedWorkerId: "w3",
-    assignedWorkerName: "Carlos López",
-    observations: "Mantenimiento de plaza.",
-  },
-  {
-    id: "t5",
-    sectorId: "2",
-    sectorName: "Sector Beta",
-    type: "Poda",
-    status: "pendiente",
-    startDate: "2024-05-20",
-    endDate: null,
-    assignedWorkerId: "w1",
-    assignedWorkerName: "Juan Pérez",
-    observations: "Rama peligrosa.",
-  },
-  {
-    id: "t6",
-    sectorId: "4",
-    sectorName: "Sector Delta",
-    type: "Poda",
-    status: "completado",
-    startDate: "2024-05-01",
-    endDate: "2024-05-02",
-    assignedWorkerId: "w5",
-    assignedWorkerName: "Laura Gómez",
-    observations: "Limpieza de sumideros.",
-  },
-  {
-    id: "t7",
-    sectorId: "5",
-    sectorName: "Sector Epsilon",
-    type: "Corte de pasto",
-    status: "en proceso",
-    startDate: "2024-05-11",
-    endDate: null,
-    assignedWorkerId: "w6",
-    assignedWorkerName: "David Fernández",
-    observations: "Reparación de juego infantil.",
-  },
-  {
-    id: "t8",
-    sectorId: "6",
-    sectorName: "Sector Zeta",
-    type: "Poda",
-    status: "completado",
-    startDate: "2024-03-10",
-    endDate: "2024-03-15",
-    assignedWorkerId: "w3",
-    assignedWorkerName: "Carlos López",
-    observations: "",
-  },
-  {
-    id: "t9",
-    sectorId: "7",
-    sectorName: "Sector Eta",
-    type: "Corte de pasto",
-    status: "pendiente",
-    startDate: "2024-05-19",
-    endDate: null,
-    assignedWorkerId: "w2",
-    assignedWorkerName: "María García",
-    observations: "Parque necesita corte urgente.",
-  },
-  {
-    id: "t10",
-    sectorId: "8",
-    sectorName: "Sector Theta",
-    type: "Poda",
-    status: "completado",
-    startDate: "2024-04-01",
-    endDate: "2024-04-30",
-    assignedWorkerId: "w4",
-    assignedWorkerName: "Ana Martínez",
-    observations: "Campaña de concientización vial.",
-  },
-  {
-    id: "t11",
-    sectorId: "9",
-    sectorName: "Sector Iota",
-    type: "Poda",
-    status: "en proceso",
-    startDate: "2024-05-14",
-    endDate: null,
-    assignedWorkerId: "w1",
-    assignedWorkerName: "Juan Pérez",
-    observations: "Despeje de ramas en tendido eléctrico.",
-  },
-  {
-    id: "t12",
-    sectorId: "10",
-    sectorName: "Sector Kappa",
-    type: "Corte de pasto",
-    status: "pendiente",
-    startDate: "2024-05-22",
-    endDate: null,
-    assignedWorkerId: "w5",
-    assignedWorkerName: "Laura Gómez",
-    observations: "Grafitis en paredón municipal.",
-  },
-  {
-    id: "t13",
-    sectorId: "1",
-    sectorName: "Sector Alpha",
-    type: "Poda",
-    status: "completado",
-    startDate: "2024-05-05",
-    endDate: "2024-05-06",
-    assignedWorkerId: "w6",
-    assignedWorkerName: "David Fernández",
-    observations: "Cambio de luminarias.",
-  },
-  {
-    id: "t14",
-    sectorId: "2",
-    sectorName: "Sector Beta",
-    type: "Corte de pasto",
-    status: "completado",
-    startDate: "2024-04-20",
-    endDate: "2024-04-21",
-    assignedWorkerId: "w2",
-    assignedWorkerName: "María García",
-    observations: "",
-  },
-  {
-    id: "t15",
-    sectorId: "3",
-    sectorName: "Sector Gamma",
-    type: "Poda",
-    status: "pendiente",
-    startDate: "2024-05-25",
-    endDate: null,
-    assignedWorkerId: "w3",
-    assignedWorkerName: "Carlos López",
-    observations: "Revisión de árbol añoso.",
-  },
-  {
-    id: "t16",
-    sectorId: "5",
-    sectorName: "Sector Epsilon",
-    type: "Corte de pasto",
-    status: "completado",
-    startDate: "2024-05-01",
-    endDate: "2024-05-01",
-    assignedWorkerId: "w4",
-    assignedWorkerName: "Ana Martínez",
-    observations: "Banquinas de ruta.",
-  },
-  {
-    id: "t17",
-    sectorId: "8",
-    sectorName: "Sector Theta",
-    type: "Poda",
-    status: "en proceso",
-    startDate: "2024-05-18",
-    endDate: null,
-    assignedWorkerId: "w1",
-    assignedWorkerName: "Juan Pérez",
-    observations: "",
-  },
-  {
-    id: "t18",
-    sectorId: "9",
-    sectorName: "Sector Iota",
-    type: "Corte de pasto",
-    status: "completado",
-    startDate: "2024-04-15",
-    endDate: "2024-04-16",
-    assignedWorkerId: "w2",
-    assignedWorkerName: "María García",
-    observations: "Plaza del barrio.",
-  },
-  {
-    id: "t19",
-    sectorId: "1",
-    sectorName: "Sector Alpha",
-    type: "Corte de pasto",
-    status: "pendiente",
-    startDate: "2024-05-29",
-    endDate: null,
-    assignedWorkerId: "w5",
-    assignedWorkerName: "Laura Gómez",
-    observations: "",
-  },
-  {
-    id: "t20",
-    sectorId: "4",
-    sectorName: "Sector Delta",
-    type: "Poda",
-    status: "en proceso",
-    startDate: "2024-05-20",
-    endDate: null,
-    assignedWorkerId: "w6",
-    assignedWorkerName: "David Fernández",
-    observations: "Pintura de sendas peatonales.",
-  },
-  {
-    id: "t21",
-    sectorId: "7",
-    sectorName: "Sector Eta",
-    type: "Poda",
-    status: "completado",
-    startDate: "2024-05-03",
-    endDate: "2024-05-04",
-    assignedWorkerId: "w3",
-    assignedWorkerName: "Carlos López",
-    observations: "Árboles frente a la escuela.",
-  },
-  {
-    id: "t22",
-    sectorId: "10",
-    sectorName: "Sector Kappa",
-    type: "Corte de pasto",
-    status: "pendiente",
-    startDate: "2024-06-01",
-    endDate: null,
-    assignedWorkerId: "w4",
-    assignedWorkerName: "Ana Martínez",
-    observations: "",
-  },
-]
+// Datos desde API
 
 export interface ReportFiltersState {
   dateRange?: { from?: Date; to?: Date }
@@ -330,13 +41,35 @@ export default function ReportsView() {
     workerId: "todos",
   })
   const [reportData, setReportData] = useState<ReportData | null>(null)
+  const [allTasks, setAllTasks] = useState<Task[]>([])
+  const [workers, setWorkers] = useState<Worker[]>([])
+  const [sectors, setSectors] = useState<Array<Pick<SectorPolygon, 'id' | 'name'>>>([])
   const [showReport, setShowReport] = useState(false)
   const { showSimulatedFeature } = useNotifications()
+
+  useEffect(() => {
+    const load = async () => {
+      const [tasksRes, workersRes, sectorsRes] = await Promise.all([
+        fetch('/api/tareas', { cache: 'no-store' }),
+        fetch('/api/workers', { cache: 'no-store' }),
+        fetch('/api/sectores', { cache: 'no-store' }),
+      ])
+      const [t, w, s] = await Promise.all([
+        tasksRes.json(),
+        workersRes.json(),
+        sectorsRes.json(),
+      ])
+      setAllTasks(t)
+      setWorkers(w)
+      setSectors((s as SectorPolygon[]).map(({ id, name }) => ({ id, name })))
+    }
+    load().catch(console.error)
+  }, [])
 
   const handleApplyFilters = useCallback((currentFilters: ReportFiltersState) => {
     setFilters(currentFilters) // Guardar los filtros aplicados
 
-    const filtered = allTasksForReport.filter((task) => {
+    const filtered = allTasks.filter((task) => {
       const taskStartDate = new Date(task.startDate)
       const dateMatch =
         !currentFilters.dateRange ||
@@ -424,8 +157,8 @@ export default function ReportsView() {
       </div>
 
       <ReportFilters
-        workers={sampleWorkers}
-        sectors={sampleSectorsForReport}
+        workers={workers}
+        sectors={sectors}
         onApplyFilters={handleApplyFilters}
         initialFilters={filters}
       />

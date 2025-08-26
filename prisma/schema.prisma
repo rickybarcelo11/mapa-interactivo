@@ -82,3 +82,60 @@ model Task {
   @@index([sectorId])
   @@index([assignedWorkerId])
 }
+
+/// Enums para Arbolado
+enum SidewalkSide {
+  Norte
+  Sur
+  Este
+  Oeste
+  Ambas
+  Ninguna
+}
+
+enum GeneralStatus {
+  Bueno
+  Regular
+  Malo
+  Necesita_Intervencion
+}
+
+enum TreeStatus {
+  Sano
+  Enfermo
+  Necesita_Poda
+  Seco
+  Recien_Plantado
+  Malo
+}
+
+/// Secciones de calles con arbolado
+model StreetSection {
+  id                 String         @id @default(cuid())
+  streetName         String
+  addressRange       String
+  sidewalkSide       SidewalkSide
+  predominantSpecies String
+  treeCount          Int
+  generalStatus      GeneralStatus
+
+  createdAt          DateTime       @default(now())
+  updatedAt          DateTime       @updatedAt
+}
+
+/// Árboles individuales
+model Tree {
+  id               String       @id @default(cuid())
+  species          String
+  status           TreeStatus
+  streetName       String
+  streetNumber     String
+  sidewalk         SidewalkSide?
+  location         Json?
+  plantingDate     DateTime?
+  lastPruningDate  DateTime?
+  observations     String?
+
+  createdAt        DateTime     @default(now())
+  updatedAt        DateTime     @updatedAt
+}

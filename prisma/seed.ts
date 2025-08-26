@@ -1,4 +1,5 @@
-import { PrismaClient, Status, SectorType } from '@prisma/client'
+import { PrismaClient, Status, SectorType, SidewalkSide, GeneralStatus, TreeStatus } from '@prisma/client'
+import { streetsData, individualTreesData } from '../src/data/trees.data'
 import { workersData } from '../src/data/workers.data'
 import { sectorsData } from '../src/data/sectors.data'
 import { tasksData } from '../src/data/tasks.data'
@@ -6,15 +7,15 @@ import { tasksData } from '../src/data/tasks.data'
 const prisma = new PrismaClient()
 
 async function main() {
-  // Workers
+  // Limpiar en orden correcto por FK: Tasks -> Sectors -> Workers
+  await prisma.task.deleteMany()
+  await prisma.sector.deleteMany()
   await prisma.worker.deleteMany()
+
+  // Workers
   await prisma.worker.createMany({
     data: workersData.map(w => ({ id: w.id, name: w.name, observaciones: w.observaciones ?? null }))
   })
-
-  // Sectors
-  await prisma.task.deleteMany()
-  await prisma.sector.deleteMany()
 
   await Promise.all(sectorsData.map(s =>
     prisma.sector.create({
@@ -46,6 +47,41 @@ async function main() {
         assignedWorkerId: t.assignedWorkerId,
         assignedWorkerName: t.assignedWorkerName,
         observations: t.observations || null,
+      }
+    })
+  ))
+
+  // Trees - StreetSections
+  await prisma.streetSection.deleteMany()
+  await prisma.tree.deleteMany()
+
+  await Promise.all(streetsData.map(s =>
+    prisma.streetSection.create({
+      data: {
+        id: s.id,
+        streetName: s.name,
+        addressRange: s.sections[0]?.addressRange ?? 'N/A',
+        sidewalkSide: (s.sections[0]?.sidewalkSide ?? 'Norte') as SidewalkSide,
+        predominantSpecies: s.sections[0]?.predominantSpecies ?? 'N/A',
+        treeCount: s.sections[0]?.treeCount ?? 0,
+        generalStatus: (s.sections[0]?.generalStatus ?? 'Bueno').replace('Necesita Intervención','Necesita_Intervencion') as GeneralStatus,
+      }
+    })
+  ))
+
+  await Promise.all(individualTreesData.map(t =>
+    prisma.tree.create({
+      data: {
+        id: t.id,
+        species: t.species,
+        status: (t.status as any).replace('Recién Plantado','Recien_Plantado').replace('Necesita Poda','Necesita_Poda') as TreeStatus,
+        streetName: t.streetName,
+        streetNumber: t.streetNumber,
+        sidewalk: (t.sidewalk as any) ?? null,
+        location: (t.location as any) ?? null,
+        plantingDate: t.plantingDate ? new Date(t.plantingDate + 'T00:00:00.000Z') : null,
+        lastPruningDate: t.lastPruningDate ? new Date(t.lastPruningDate + 'T00:00:00.000Z') : null,
+        observations: t.observations ?? null,
       }
     })
   ))

@@ -1,26 +1,16 @@
 "use client"
 
-import { useState, useMemo } from "react"
+import { useState, useMemo, useEffect } from "react"
 import WorkersFilters from "@/components/workers/workers-filters"
 import WorkersTable from "@/components/workers/workers-table"
 import AddEditWorkerModal from "@/components/workers/add-edit-worker-modal"
 import ConfirmDeleteDialog from "@/components/tasks/confirm-delete-dialog" // Reutilizamos
 import { Button } from "@/components/ui/button"
 import { PlusCircle } from "lucide-react"
-import type { Worker, Task } from "./tasks-view" // Reutilizamos tipos de TasksView
+import type { Worker, Task } from "@/src/types"
 import { useNotifications } from "@/src/hooks"
 
-// Datos de ejemplo (podrían venir de un contexto o API)
-const initialWorkers: Worker[] = [
-  { id: "w1", name: "Juan Pérez", observaciones: "Experto en poda de altura." },
-  { id: "w2", name: "María García", observaciones: "Eficiente en corte de pasto." },
-  { id: "w3", name: "Carlos López", observaciones: "Nuevo ingreso, en capacitación." },
-  { id: "w4", name: "Ana Martínez", observaciones: "Conductora de maquinaria pesada." },
-  { id: "w5", name: "Laura Gómez", observaciones: "Especialista en limpieza urbana." },
-  { id: "w6", name: "David Fernández", observaciones: "Técnico en mantenimiento general." },
-  { id: "w7", name: "Sofía Rodríguez", observaciones: "Paisajista y experta en jardinería." },
-  { id: "w8", name: "Miguel Torres", observaciones: "" },
-]
+// Cargar desde API
 
 const sampleTasksForWorkers: Task[] = [
   {
@@ -158,13 +148,21 @@ const sampleTasksForWorkers: Task[] = [
 ]
 
 export default function WorkersView() {
-  const [workers, setWorkers] = useState<Worker[]>(initialWorkers)
+  const [workers, setWorkers] = useState<Worker[]>([])
   const [tasks, setTasks] = useState<Task[]>(sampleTasksForWorkers) // Para detalles y filtros
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [editingWorker, setEditingWorker] = useState<Worker | null>(null)
   const [deletingWorker, setDeletingWorker] = useState<Worker | null>(null)
   const [filters, setFilters] = useState({ name: "", hasActiveTasks: false })
   const { showWorkerHasActiveTasks } = useNotifications()
+  useEffect(() => {
+    const load = async () => {
+      const res = await fetch('/api/workers', { cache: 'no-store' })
+      const data = await res.json()
+      setWorkers(data)
+    }
+    load().catch(console.error)
+  }, [])
 
   const workerTasks = useMemo(() => {
     const map = new Map<string, Task[]>()

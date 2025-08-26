@@ -9,9 +9,7 @@ import type { Task, Worker, SectorStatus } from "@/src/types"
 import { useSearchParams, useRouter } from "next/navigation"
 import { useNotifications } from "@/src/hooks"
 
-// Importamos los datos simulados
-import { tasksData } from "@/src/data/tasks.data"
-import { workersData } from "@/src/data/workers.data"
+// Ahora cargamos desde la API
 
 export default function TasksView() {
   const [allTasks, setAllTasks] = useState<Task[]>([])
@@ -26,21 +24,22 @@ export default function TasksView() {
   const workerIdParam = searchParams.get('workerId')
   const autoExpandParam = searchParams.get('autoExpand')
 
-  // Simulación de carga de datos desde una API
+  // Carga de datos desde la API
   useEffect(() => {
-    // En una app real:
-    // Promise.all([fetch('/api/tasks'), fetch('/api/workers')])
-    //   .then(([tasksRes, workersRes]) => Promise.all([tasksRes.json(), workersRes.json()]))
-    //   .then(([tasks, workers]) => {
-    //     setAllTasks(tasks);
-    //     setFilteredTasks(tasks);
-    //     setWorkers(workers);
-    //   });
-
-    // Usando mocks:
-    setAllTasks(tasksData)
-    setFilteredTasks(tasksData) // Inicialmente mostramos todo
-    setWorkers(workersData)
+    const load = async () => {
+      const [tasksRes, workersRes] = await Promise.all([
+        fetch('/api/tareas', { cache: 'no-store' }),
+        fetch('/api/workers', { cache: 'no-store' })
+      ])
+      const [tasks, workers] = await Promise.all([
+        tasksRes.json(),
+        workersRes.json()
+      ])
+      setAllTasks(tasks)
+      setFilteredTasks(tasks)
+      setWorkers(workers)
+    }
+    load().catch(console.error)
   }, [])
 
   // Aplicar filtros por query params y autoexpansión
