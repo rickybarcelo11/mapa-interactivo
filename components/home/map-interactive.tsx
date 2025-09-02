@@ -24,7 +24,7 @@ const DrawingHandler = memo(({ isDrawingMode, onDrawingComplete }: {
   const [drawingPoints, setDrawingPoints] = useState<[number, number][]>([])
   const map = useMap()
 
-  const handleMapClick = useCallback((e: any) => {
+  const handleMapClick = useCallback((e: { latlng: { lat: number; lng: number } }) => {
     if (!isDrawingMode) return
     
     const { lat, lng } = e.latlng
@@ -195,14 +195,14 @@ function MapInteractive({
   // Estado para puntos de dibujo y control de botón
   const [drawingPoints, setDrawingPoints] = useState<[number, number][]>([])
   const [showFinishButton, setShowFinishButton] = useState(false)
-  const mapRef = useRef<any>(null)
+  const mapRef = useRef<import('leaflet').Map | null>(null)
 
   // Si está en modo dibujo, usar DrawingHandler extendido
   useEffect(() => {
     if (!isDrawingMode) setDrawingPoints([])
   }, [isDrawingMode])
 
-  const handleMapClick = useCallback((e: any) => {
+  const handleMapClick = useCallback((e: { latlng: { lat: number; lng: number } }) => {
     if (!isDrawingMode) return;
     const { lat, lng } = e.latlng;
     setDrawingPoints((prev) => [...prev, [lat, lng]]);

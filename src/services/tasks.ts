@@ -53,7 +53,7 @@ function mapStatusToDb(status: TaskDTO['status']): 'pendiente' | 'en_proceso' | 
 }
 
 function toDate(d: string | null | undefined): Date | null | undefined {
-  if (d === null || d === undefined) return d as any
+  if (d === null || d === undefined) return d
   return new Date(`${d}T00:00:00.000Z`)
 }
 
@@ -61,16 +61,16 @@ export async function createTask(input: unknown): Promise<TaskDTO> {
   const data = createTaskSchema.parse(input)
   const row = await prisma.task.create({
     data: {
-      id: (data as any).id ?? undefined,
+      id: (data as { id?: string }).id ?? undefined,
       sectorId: data.sectorId,
-      sectorName: (data as any).sectorName ?? '',
+      sectorName: (data as { sectorName?: string }).sectorName ?? '',
       type: data.type,
-      status: mapStatusToDb(data.status as any),
+      status: mapStatusToDb(data.status),
       startDate: toDate(data.startDate)!,
-      endDate: toDate((data as any).endDate) ?? null,
+      endDate: toDate((data as { endDate?: string | null }).endDate ?? null) ?? null,
       assignedWorkerId: data.assignedWorkerId,
-      assignedWorkerName: (data as any).assignedWorkerName ?? '',
-      observations: (data as any).observations ?? null,
+      assignedWorkerName: (data as { assignedWorkerName?: string }).assignedWorkerName ?? '',
+      observations: (data as { observations?: string | null }).observations ?? null,
     }
   })
   return {
@@ -78,7 +78,7 @@ export async function createTask(input: unknown): Promise<TaskDTO> {
     sectorId: row.sectorId,
     sectorName: row.sectorName,
     type: row.type,
-    status: mapStatusToUi(row.status as any),
+    status: mapStatusToUi(row.status as unknown as string),
     startDate: toDateString(row.startDate)!,
     endDate: toDateString(row.endDate),
     assignedWorkerId: row.assignedWorkerId,
@@ -93,14 +93,17 @@ export async function updateTask(input: unknown): Promise<TaskDTO> {
     where: { id: data.id },
     data: {
       sectorId: data.sectorId ?? undefined,
-      sectorName: (data as any).sectorName ?? undefined,
+      sectorName: (data as { sectorName?: string }).sectorName ?? undefined,
       type: data.type ?? undefined,
-      status: data.status ? mapStatusToDb(data.status as any) : undefined,
+      status: data.status ? mapStatusToDb(data.status) : undefined,
       startDate: data.startDate ? toDate(data.startDate)! : undefined,
-      endDate: (data as any).endDate !== undefined ? toDate((data as any).endDate) ?? null : undefined,
+      endDate:
+        (data as { endDate?: string | null }).endDate !== undefined
+          ? toDate((data as { endDate?: string | null }).endDate ?? null) ?? null
+          : undefined,
       assignedWorkerId: data.assignedWorkerId ?? undefined,
-      assignedWorkerName: (data as any).assignedWorkerName ?? undefined,
-      observations: (data as any).observations ?? undefined,
+      assignedWorkerName: (data as { assignedWorkerName?: string }).assignedWorkerName ?? undefined,
+      observations: (data as { observations?: string | null }).observations ?? undefined,
     }
   })
   return {
@@ -108,7 +111,7 @@ export async function updateTask(input: unknown): Promise<TaskDTO> {
     sectorId: row.sectorId,
     sectorName: row.sectorName,
     type: row.type,
-    status: mapStatusToUi(row.status as any),
+    status: mapStatusToUi(row.status as unknown as string),
     startDate: toDateString(row.startDate)!,
     endDate: toDateString(row.endDate),
     assignedWorkerId: row.assignedWorkerId,
@@ -131,7 +134,7 @@ export async function finishTask(input: unknown): Promise<TaskDTO> {
     sectorId: row.sectorId,
     sectorName: row.sectorName,
     type: row.type,
-    status: mapStatusToUi(row.status as any),
+    status: mapStatusToUi(row.status as unknown as string),
     startDate: toDateString(row.startDate)!,
     endDate: toDateString(row.endDate),
     assignedWorkerId: row.assignedWorkerId,

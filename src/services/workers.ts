@@ -20,7 +20,7 @@ export async function createWorker(input: unknown): Promise<WorkerDTO> {
   const row = await prisma.worker.create({
     data: {
       // permitimos id externo solo si viene (para compatibilidad con mocks), si no cuid()
-      id: (data as any).id ?? undefined,
+      id: (data as { id?: string }).id ?? undefined,
       name: data.name,
       observaciones: data.observaciones ?? null,
     }

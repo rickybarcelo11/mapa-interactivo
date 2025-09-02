@@ -14,7 +14,7 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { MoreHorizontal, Edit, Trash2, CheckCircle, Clock, AlertTriangle, History } from "lucide-react"
 import type { Task } from "@/views/tasks-view"
-import type { SectorStatus } from "@/components/home/map-interactive-placeholder"
+import type { SectorStatus } from "@/src/types"
 import ConfirmDeleteDialog from "./confirm-delete-dialog"
 import { useNotifications } from "@/src/hooks"
 

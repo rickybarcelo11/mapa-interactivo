@@ -171,7 +171,7 @@ export const useWorkersStore = create<WorkersState & WorkersActions>()(
         try {
           const { getWorkers } = await import('../services/provider')
           const data = await getWorkers()
-          const validated = data.map((w: any) => validateWorker(w))
+          const validated = data.map((w) => validateWorker(w))
           set({ workers: validated, loading: false, error: null })
         } catch (error) {
           set({ error: error instanceof Error ? error.message : 'Error al inicializar trabajadores', loading: false })

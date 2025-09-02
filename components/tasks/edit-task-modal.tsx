@@ -16,7 +16,7 @@ import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import type { Task, Worker } from "@/views/tasks-view"
-import type { SectorStatus } from "@/components/home/map-interactive-placeholder"
+import type { SectorStatus } from "@/src/types"
 import { useNotifications } from "@/src/hooks"
 import { validateTaskForm, validateTask } from "@/src/validations/task-schemas"
 

@@ -1,8 +1,88 @@
-// Exportar todos los esquemas de validación
-export * from './sector-schemas'
-export * from './task-schemas'
-export * from './worker-schemas'
-export * from './tree-schemas'
+// Re-exportar solo símbolos públicos evitando colisiones de nombres (coordinateSchema/dateSchema)
 
-// Nota: coordinateSchema se define en sector-schemas. Evitamos re-exportar dateSchema aquí
-// para no generar conflictos entre definiciones similares en distintos módulos.
+export {
+  sectorPolygonSchema,
+  createSectorSchema,
+  updateSectorSchema,
+  sectorFiltersSchema,
+  sectorFormSchema,
+  type SectorPolygonValidated,
+  type CreateSectorData,
+  type UpdateSectorData,
+  type SectorFilters,
+  type SectorFormData,
+  validateSector,
+  validateCreateSector,
+  validateUpdateSector,
+  validateSectorFilters,
+  validateSectorForm,
+} from './sector-schemas'
+
+export {
+  taskSchema,
+  createTaskSchema,
+  updateTaskSchema,
+  taskFiltersSchema,
+  taskFormSchema,
+  finishTaskSchema,
+  type TaskValidated,
+  type CreateTaskData,
+  type UpdateTaskData,
+  type TaskFilters,
+  type TaskFormData,
+  type FinishTaskData,
+  validateTask,
+  validateCreateTask,
+  validateUpdateTask,
+  validateTaskFilters,
+  validateTaskForm,
+  validateFinishTask,
+  validateTaskDates,
+} from './task-schemas'
+
+export {
+  workerSchema,
+  createWorkerSchema,
+  updateWorkerSchema,
+  workerFiltersSchema,
+  workerFormSchema,
+  type WorkerValidated,
+  type CreateWorkerData,
+  type UpdateWorkerData,
+  type WorkerFilters,
+  type WorkerFormData,
+  type WorkerDeletionData,
+  validateWorker,
+  validateCreateWorker,
+  validateUpdateWorker,
+  validateWorkerFilters,
+  validateWorkerForm,
+  validateWorkerDeletion,
+} from './worker-schemas'
+
+export {
+  individualTreeSchema,
+  treeSectionSchema,
+  streetWithSectionsSchema,
+  createTreeSchema,
+  updateTreeSchema,
+  treeFiltersSchema,
+  treeFormSchema,
+  type IndividualTreeValidated,
+  type TreeSectionValidated,
+  type StreetWithSectionsValidated,
+  type CreateTreeData,
+  type UpdateTreeData,
+  type TreeFilters,
+  type TreeFormData,
+  validateIndividualTree,
+  validateCreateTree,
+  validateUpdateTree,
+  validateTreeFilters,
+  validateTreeForm,
+  validateTreeSection,
+  validateStreetWithSections,
+  validateTreeDates,
+} from './tree-schemas'
+
+// Nota: No re-exportamos coordinateSchema ni dateSchema para evitar colisiones.

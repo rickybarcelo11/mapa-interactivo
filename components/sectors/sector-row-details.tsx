@@ -2,7 +2,7 @@
 
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
-import type { SectorPolygon } from "@/components/home/map-interactive-placeholder"
+import type { SectorPolygon } from "@/src/types"
 import { Edit, History, MapPin, Trash2 } from "lucide-react"
 import { useNotifications } from "@/src/hooks"
 

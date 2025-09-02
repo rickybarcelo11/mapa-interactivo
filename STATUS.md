@@ -1,6 +1,6 @@
 # Estado del Proyecto (bitácora)
 
-Fecha: 2025-08-26
+Fecha: 2025-09-02
 
 ## Resumen de la sesión
 
@@ -15,8 +15,8 @@ Fecha: 2025-08-26
 - Limpieza y fixes: problemas de HMR/caché `.next` resueltos; warnings de keys corregidos.
 - **PASO 6 COMPLETADO**: Optimización de rendimiento implementada con `useMemo`/`useCallback`/`React.memo` en componentes críticos.
 - **LIMPIEZA COMPLETADA**: Estandarización del gestor de paquetes (solo npm, eliminado pnpm-lock.yaml).
-- **DISCUSIÓN BACKEND**: Análisis completo de opciones para implementar backend real (pendiente consulta docente).
-- **SEGURIDAD API KEY**: Configuración de variables de entorno para proteger Google Maps API key.
+- **BACKEND ACTIVO**: Conectado a base en la nube (Neon) con Prisma y API Next.js operativa.
+- **MAPAS**: Leaflet + OpenStreetMap activo (sin necesidad de API key de Google).
 - Código subido a main: repo `rickybarcelo11/mapa-interactivo` actualizado.
 
 ## Ruta de integración: Neon (PostgreSQL) + Prisma
@@ -108,22 +108,20 @@ npm run prisma:seed
 1. ~~Optimización de rendimiento (Paso 6)~~ ✅ **COMPLETADO**
 2. ~~Limpieza de gestores de paquetes~~ ✅ **COMPLETADO**
 3. ~~Configuración de seguridad API key~~ ✅ **COMPLETADO**
-4. **CONSULTA DOCENTE** ⚠️ **PENDIENTE** - Cambio de backend C# a Next.js/Node.js
-5. **Implementación de Backend** - Depende de la respuesta del docente
-6. Lazy loading y code-splitting
+4. Integración fina con backend
+   - Estados de loading/error vacíos; reintentos; paginación y filtros en API.
+5. Autenticación y protección de rutas
+   - Manejo de tokens/refresh; guard en `app/layout.tsx`; expiración de sesión.
+6. Tipado estricto
+   - Eliminar `any` residuales; tipos derivados de Zod en servicios y stores.
+7. Lazy loading y code-splitting
    - Carga diferida de vistas pesadas y componentes secundarios.
-7. Tipado estricto
-   - Eliminar `any` residuales, reforzar tipos derivados de Zod.
-8. Logging y monitoreo básico
-   - Hook/util de logging + consola condicionada por env.
+8. Logging y monitoreo
+   - Trazas controladas por env; evaluar Sentry/LogRocket.
 9. Testing
-   - Unit tests (Zod, hooks) e integración básica (formularios/stores).
-10. Autenticación (básico)
-    - Estructura de rutas protegidas y stub de sesión.
-11. Backend real (Node/Express/PostgreSQL/Prisma) o C# (.NET)
-    - Depende de la decisión del docente.
-12. CI/CD
-    - Lint/Build/Test en PRs; despliegue a Vercel cuando sea necesario.
+   - Unit (Zod, hooks, servicios) e integración básica (formularios/stores/API).
+10. CI/CD
+    - Lint/Build/Test en PRs y migraciones `prisma migrate deploy` en deploy.
 
 ## Cómo correr localmente
 
@@ -135,7 +133,7 @@ npm run dev
 
 **IMPORTANTE**: 
 - Usar solo `npm` como gestor de paquetes. El proyecto está estandarizado para npm.
-- **Crear archivo .env.local** con tu API key de Google Maps antes de ejecutar.
+- La API key de Google Maps ya no es necesaria (mapa con OpenStreetMap).
 
 Reiniciar dev server cuando: se cambien deps, `next.config.mjs`, `tsconfig.json`, `tailwind.config.ts`, `postcss.config.mjs`, páginas de error, o si HMR falla. Tip: borrar `.next/` y `Ctrl+F5` en el navegador.
 
@@ -148,13 +146,12 @@ Reiniciar dev server cuando: se cambien deps, `next.config.mjs`, `tsconfig.json`
 - **NUEVO**: Memoizar componentes hijos que se renderizan en listas para evitar re-renderizados innecesarios.
 - **NUEVO**: Implementar cache en stores para selectores computados costosos.
 - **NUEVO**: Usar solo `npm` como gestor de paquetes para evitar conflictos.
-- **NUEVO**: Backend pendiente de consulta docente - no implementar hasta obtener aprobación.
+- **NUEVO**: Backend activo - usar servicios/API; mocks solo para pruebas aisladas.
 - **NUEVO**: API key de Google Maps debe estar en .env.local (NO subir al repo).
 
 ## Idea para próxima sesión
 
-- **PRIORIDAD 1**: Consultar con docente sobre cambio de backend C# a Next.js/Node.js
-- **PRIORIDAD 2**: Una vez aprobado, implementar Next.js + Base de Datos Directa
-- **PRIORIDAD 3**: Migrar datos mock a base de datos real
-- **PRIORIDAD 4**: Implementar Lazy Loading sin problemas de datos
-- **ALTERNATIVA**: Si no se aprueba el cambio, implementar backend C# separado
+- **PRIORIDAD 1**: Autenticación básica + guard de rutas y expiración de sesión
+- **PRIORIDAD 2**: Paginación/filtrado desde API en tablas grandes
+- **PRIORIDAD 3**: Estados de error/loading consistentes y reintentos
+- **PRIORIDAD 4**: Configurar pipeline CI (lint/build/test) y migraciones

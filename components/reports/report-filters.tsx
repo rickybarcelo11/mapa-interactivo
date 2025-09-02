@@ -11,7 +11,7 @@ import { es } from "date-fns/locale"
 import type { DateRange } from "react-day-picker"
 import type { ReportFiltersState } from "@/views/reports-view"
 import type { Worker } from "@/views/tasks-view"
-import type { SectorPolygon } from "@/components/home/map-interactive-placeholder"
+import type { SectorPolygon } from "@/src/types"
 
 interface ReportFiltersComponentProps {
   workers: Worker[]

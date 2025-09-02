@@ -246,7 +246,7 @@ export const useTasksStore = create<TasksState & TasksActions>()(
         try {
           const { getTasks } = await import('../services/provider')
           const data = await getTasks()
-          const validated = data.map((t: any) => validateTask(t))
+          const validated = data.map((t) => validateTask(t))
           set({ tasks: validated, loading: false, error: null })
         } catch (error) {
           set({ error: error instanceof Error ? error.message : 'Error al inicializar tareas', loading: false })

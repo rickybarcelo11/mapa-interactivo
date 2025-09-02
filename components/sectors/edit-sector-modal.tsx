@@ -45,8 +45,9 @@ export default function EditSectorModal({ isOpen, onOpenChange, sector, onSave }
       if (!sector) return
       onSave({ ...sector, ...validated })
       onOpenChange(false)
-    } catch (err: any) {
-      showValidationError(err?.message || "Datos inválidos")
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Datos inválidos'
+      showValidationError(message)
     }
   }
 

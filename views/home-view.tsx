@@ -69,7 +69,7 @@ export default function HomeView() {
   const [isNewSectorModalOpen, setIsNewSectorModalOpen] = useState(false)
   const [sectors, setSectors] = useState<SectorPolygon[]>(sampleSectors)
   const [isDrawingMode, setIsDrawingMode] = useState(false)
-  const [pendingSectorData, setPendingSectorData] = useState<any>(null)
+  const [pendingSectorData, setPendingSectorData] = useState<Partial<SectorPolygon> | null>(null)
   const [typeFilters, setTypeFilters] = useState({ poda: true, cortePasto: true })
   const [statusFilters, setStatusFilters] = useState({ pendiente: true, enProceso: true, completado: true })
   const { showSectorCreated, showSectorUpdated } = useNotifications()
@@ -82,7 +82,7 @@ export default function HomeView() {
     setIsNewSectorModalOpen(true)
   }
 
-  const handleCreateNewSector = (newSectorData: any) => {
+  const handleCreateNewSector = (newSectorData: Partial<SectorPolygon>) => {
     // Guardar los datos del sector y activar modo dibujo
     setPendingSectorData(newSectorData)
     setIsNewSectorModalOpen(false)

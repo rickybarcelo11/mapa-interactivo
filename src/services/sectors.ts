@@ -52,10 +52,10 @@ export async function createSector(input: unknown): Promise<SectorDTO> {
   const data = createSectorSchema.parse(input)
   const row = await prisma.sector.create({
     data: {
-      id: (data as any).id ?? undefined,
+      id: (data as { id?: string }).id ?? undefined,
       name: data.name,
-      type: mapTypeToDb(data.type as any),
-      status: mapStatusToDb(data.status as any),
+      type: mapTypeToDb(data.type),
+      status: mapStatusToDb(data.status),
       path: data.path as unknown as object,
       direccion: data.direccion ?? null,
       observaciones: data.observaciones ?? null,
@@ -64,9 +64,9 @@ export async function createSector(input: unknown): Promise<SectorDTO> {
   return {
     id: row.id,
     name: row.name,
-    type: mapTypeToUi(row.type as any),
-    status: mapStatusToUi(row.status as any),
-    path: row.path as any,
+    type: mapTypeToUi(row.type as unknown as string),
+    status: mapStatusToUi(row.status as unknown as string),
+    path: row.path as unknown as { lat: number; lng: number }[],
     direccion: row.direccion ?? undefined,
     observaciones: row.observaciones ?? undefined,
   }
@@ -78,9 +78,9 @@ export async function updateSector(input: unknown): Promise<SectorDTO> {
     where: { id: data.id },
     data: {
       name: data.name ?? undefined,
-      type: data.type ? mapTypeToDb(data.type as any) : undefined,
-      status: data.status ? mapStatusToDb(data.status as any) : undefined,
-      path: (data as any).path ?? undefined,
+      type: data.type ? mapTypeToDb(data.type) : undefined,
+      status: data.status ? mapStatusToDb(data.status) : undefined,
+      path: (data as { path?: { lat: number; lng: number }[] }).path ?? undefined,
       direccion: data.direccion ?? undefined,
       observaciones: data.observaciones ?? undefined,
     }
@@ -88,9 +88,9 @@ export async function updateSector(input: unknown): Promise<SectorDTO> {
   return {
     id: row.id,
     name: row.name,
-    type: mapTypeToUi(row.type as any),
-    status: mapStatusToUi(row.status as any),
-    path: row.path as any,
+    type: mapTypeToUi(row.type as unknown as string),
+    status: mapStatusToUi(row.status as unknown as string),
+    path: row.path as unknown as { lat: number; lng: number }[],
     direccion: row.direccion ?? undefined,
     observaciones: row.observaciones ?? undefined,
   }

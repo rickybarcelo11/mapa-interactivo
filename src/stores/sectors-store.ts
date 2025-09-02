@@ -193,7 +193,7 @@ export const useSectorsStore = create<SectorsState & SectorsActions>()(
         try {
           const { getSectors } = await import('../services/provider')
           const data = await getSectors()
-          const validated = data.map((s: any) => validateSector(s))
+          const validated = data.map((s) => validateSector(s))
           set({ sectors: validated, loading: false, error: null, _filteredSectorsCache: null })
         } catch (error) {
           set({ error: error instanceof Error ? error.message : 'Error al inicializar sectores', loading: false })
