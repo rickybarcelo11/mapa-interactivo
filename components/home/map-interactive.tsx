@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect, useRef, Fragment, useCallback, useMemo, memo } from "react"
-import { MapContainer, TileLayer, Polygon, useMap, useMapEvents, Marker, Polyline } from "react-leaflet"
+import { MapContainer, TileLayer, Polygon, useMap, useMapEvents, Marker, Polyline, Tooltip } from "react-leaflet"
 import "leaflet/dist/leaflet.css"
 import type { SectorPolygon } from "@/src/types"
 
@@ -102,16 +102,6 @@ const DrawingHandler = memo(({ isDrawingMode, onDrawingComplete }: {
 
 DrawingHandler.displayName = "DrawingHandler"
 
-// Calcula el centroide de un polígono
-function getPolygonCentroid(path: { lat: number; lng: number }[]): [number, number] {
-  let x = 0, y = 0, n = path.length;
-  for (let i = 0; i < n; i++) {
-    x += path[i].lat;
-    y += path[i].lng;
-  }
-  return [x / n, y / n];
-}
-
 // Componente memoizado para el polígono de sector
 const SectorPolygon = memo(({ 
   sector, 
@@ -136,30 +126,6 @@ const SectorPolygon = memo(({
     fillOpacity: 0.5,
   }), [sector.status])
 
-  const centroid = useMemo(() => getPolygonCentroid(sector.path), [sector.path])
-
-  const getLabelIcon = useCallback(() => {
-    if (typeof window === "undefined") return undefined;
-    const L = require("leaflet");
-    return L.divIcon({
-      className: 'sector-label-marker',
-      html: `<div style="
-        background: rgba(30,41,59,0.85);
-        color: #fff;
-        font-size: 0.95rem;
-        font-weight: 600;
-        padding: 2px 10px;
-        border-radius: 6px;
-        text-align: center;
-        text-transform: uppercase;
-        box-shadow: 0 2px 6px rgba(0,0,0,0.15);
-        pointer-events: none;
-      ">${sector.name}</div>`,
-      iconSize: [120, 28],
-      iconAnchor: [60, 14],
-    });
-  }, [sector.name]);
-
   return (
     <Fragment key={sector.id}>
       <Polygon
@@ -168,14 +134,14 @@ const SectorPolygon = memo(({
         eventHandlers={{
           click: handleClick,
         }}
-      />
-      {/* Nombre del sector centrado */}
-      <Marker
-        key={sector.id + "-label"}
-        position={centroid}
-        icon={getLabelIcon()}
-        interactive={false}
-      />
+      >
+        {/* Etiqueta en hover: se muestra al pasar el mouse por el polígono */}
+        <Tooltip direction="top" offset={[0, -8]} opacity={1} sticky>
+          <span className="bg-slate-800/80 text-white border border-slate-600 rounded-md px-2 py-1 text-[10px] font-semibold uppercase">
+            {sector.name}
+          </span>
+        </Tooltip>
+      </Polygon>
     </Fragment>
   )
 })
