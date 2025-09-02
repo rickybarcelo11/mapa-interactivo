@@ -8,175 +8,39 @@ import ConfirmDeleteDialog from "@/components/tasks/confirm-delete-dialog" // Re
 import { Button } from "@/components/ui/button"
 import { PlusCircle } from "lucide-react"
 import type { Worker, Task } from "@/src/types"
+import { useWorkersStore } from "@/src/stores/workers-store"
+import { useTasksStore } from "@/src/stores/tasks-store"
 import { useNotifications } from "@/src/hooks"
 
-// Cargar desde API
-
-const sampleTasksForWorkers: Task[] = [
-  {
-    id: "t1",
-    sectorId: "1",
-    sectorName: "Sector Alpha",
-    type: "Poda",
-    status: "en proceso",
-    startDate: "2024-05-01",
-    endDate: null,
-    assignedWorkerId: "w1",
-    assignedWorkerName: "Juan Pérez",
-    observations: "Revisar el árbol más grande.",
-  },
-  {
-    id: "t2",
-    sectorId: "2",
-    sectorName: "Sector Beta",
-    type: "Corte de pasto",
-    status: "pendiente",
-    startDate: "2024-05-10",
-    endDate: null,
-    assignedWorkerId: "w2",
-    assignedWorkerName: "María García",
-    observations: "Césped alto.",
-  },
-  {
-    id: "t5",
-    sectorId: "5",
-    sectorName: "Sector Epsilon",
-    type: "Poda",
-    status: "completado",
-    startDate: "2024-03-01",
-    endDate: "2024-03-05",
-    assignedWorkerId: "w1",
-    assignedWorkerName: "Juan Pérez",
-    observations: "Finalizada.",
-  },
-  {
-    id: "t6",
-    sectorId: "6",
-    sectorName: "Sector Zeta",
-    type: "Corte de pasto",
-    status: "en proceso",
-    startDate: "2024-05-12",
-    endDate: null,
-    assignedWorkerId: "w4",
-    assignedWorkerName: "Ana Martínez",
-    observations: "Revisión de equipos.",
-  },
-  {
-    id: "t7",
-    sectorId: "7",
-    sectorName: "Sector Eta",
-    type: "Poda",
-    status: "pendiente",
-    startDate: "2024-05-21",
-    endDate: null,
-    assignedWorkerId: "w5",
-    assignedWorkerName: "Laura Gómez",
-    observations: "Limpiar fuente de la plaza.",
-  },
-  {
-    id: "t8",
-    sectorId: "8",
-    sectorName: "Sector Theta",
-    type: "Corte de pasto",
-    status: "en proceso",
-    startDate: "2024-05-15",
-    endDate: null,
-    assignedWorkerId: "w7",
-    assignedWorkerName: "Sofía Rodríguez",
-    observations: "Plantar nuevas flores.",
-  },
-  {
-    id: "t9",
-    sectorId: "1",
-    sectorName: "Sector Alpha",
-    type: "Poda",
-    status: "completado",
-    startDate: "2024-04-10",
-    endDate: "2024-04-12",
-    assignedWorkerId: "w3",
-    assignedWorkerName: "Carlos López",
-    observations: "Primera tarea completada.",
-  },
-  {
-    id: "t10",
-    sectorId: "2",
-    sectorName: "Sector Beta",
-    type: "Corte de pasto",
-    status: "en proceso",
-    startDate: "2024-05-18",
-    endDate: null,
-    assignedWorkerId: "w2",
-    assignedWorkerName: "María García",
-    observations: "Segunda pasada necesaria.",
-  },
-  {
-    id: "t11",
-    sectorId: "9",
-    sectorName: "Sector Iota",
-    type: "Mantenimiento",
-    status: "pendiente",
-    startDate: "2024-05-25",
-    endDate: null,
-    assignedWorkerId: "w6",
-    assignedWorkerName: "David Fernández",
-    observations: "Revisar iluminación del parque.",
-  },
-  {
-    id: "t12",
-    sectorId: "10",
-    sectorName: "Sector Kappa",
-    type: "Poda",
-    status: "pendiente",
-    startDate: "2024-05-28",
-    endDate: null,
-    assignedWorkerId: "w8",
-    assignedWorkerName: "Miguel Torres",
-    observations: "Tarea de iniciación.",
-  },
-  {
-    id: "t13",
-    sectorId: "4",
-    sectorName: "Sector Delta",
-    type: "Poda",
-    status: "en proceso",
-    startDate: "2024-05-19",
-    endDate: null,
-    assignedWorkerId: "w1",
-    assignedWorkerName: "Juan Pérez",
-    observations: "Usar equipo de altura.",
-  },
-]
+// Cargar desde stores (API real)
 
 export default function WorkersView() {
-  const [workers, setWorkers] = useState<Worker[]>([])
-  const [tasks, setTasks] = useState<Task[]>(sampleTasksForWorkers) // Para detalles y filtros
+  const workersStore = useWorkersStore((s) => s)
+  const tasksStore = useTasksStore((s) => s)
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [editingWorker, setEditingWorker] = useState<Worker | null>(null)
   const [deletingWorker, setDeletingWorker] = useState<Worker | null>(null)
   const [filters, setFilters] = useState({ name: "", hasActiveTasks: false })
   const { showWorkerHasActiveTasks } = useNotifications()
   useEffect(() => {
-    const load = async () => {
-      const res = await fetch('/api/workers', { cache: 'no-store' })
-      const data = await res.json()
-      setWorkers(data)
-    }
-    load().catch(console.error)
+    workersStore.initializeWorkers()
+    tasksStore.initializeTasks()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   const workerTasks = useMemo(() => {
     const map = new Map<string, Task[]>()
-    tasks.forEach((task) => {
+    tasksStore.tasks.forEach((task) => {
       if (!map.has(task.assignedWorkerId)) {
         map.set(task.assignedWorkerId, [])
       }
       map.get(task.assignedWorkerId)?.push(task)
     })
     return map
-  }, [tasks])
+  }, [tasksStore.tasks])
 
   const filteredWorkers = useMemo(() => {
-    return workers.filter((worker) => {
+    return workersStore.workers.filter((worker) => {
       const nameMatch = worker.name.toLowerCase().includes(filters.name.toLowerCase())
       if (!filters.hasActiveTasks) {
         return nameMatch
@@ -186,7 +50,7 @@ export default function WorkersView() {
         ?.some((task) => task.status === "pendiente" || task.status === "en proceso")
       return nameMatch && activeTasks
     })
-  }, [workers, filters, workerTasks])
+  }, [workersStore.workers, filters, workerTasks])
 
   const handleOpenModal = (worker: Worker | null = null) => {
     setEditingWorker(worker)
@@ -195,9 +59,10 @@ export default function WorkersView() {
 
   const handleSaveWorker = (workerData: Worker) => {
     if (editingWorker) {
-      setWorkers(workers.map((w) => (w.id === workerData.id ? workerData : w)))
+      workersStore.updateWorker(workerData)
     } else {
-      setWorkers([...workers, { ...workerData, id: `w${Date.now()}` }]) // Simple ID generation
+      const { id, ...rest } = workerData
+      workersStore.addWorker(rest as Omit<Worker,'id'>)
     }
     setIsModalOpen(false)
     setEditingWorker(null)
@@ -216,9 +81,8 @@ export default function WorkersView() {
 
   const confirmDelete = () => {
     if (deletingWorker) {
-      setWorkers(workers.filter((w) => w.id !== deletingWorker.id))
-      // También se deberían reasignar o manejar las tareas del trabajador eliminado
-      setTasks(tasks.filter((task) => task.assignedWorkerId !== deletingWorker.id))
+      workersStore.deleteWorker(deletingWorker.id)
+      // Opcional: filtrar tareas del trabajador eliminado en UI
       setDeletingWorker(null)
     }
   }

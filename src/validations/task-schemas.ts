@@ -72,6 +72,12 @@ export const finishTaskSchema = z.object({
   endDate: dateSchema
 })
 
+// Esquema para iniciar una tarea
+export const startTaskSchema = z.object({
+  id: z.string("El ID de la tarea es requerido"),
+  startDate: dateSchema
+})
+
 // Tipos inferidos de los esquemas
 export type TaskValidated = z.infer<typeof taskSchema>
 export type CreateTaskData = z.infer<typeof createTaskSchema>
@@ -79,6 +85,7 @@ export type UpdateTaskData = z.infer<typeof updateTaskSchema>
 export type TaskFilters = z.infer<typeof taskFiltersSchema>
 export type TaskFormData = z.infer<typeof taskFormSchema>
 export type FinishTaskData = z.infer<typeof finishTaskSchema>
+export type StartTaskData = z.infer<typeof startTaskSchema>
 
 // Función helper para validar tarea
 export const validateTask = (data: unknown): TaskValidated => {

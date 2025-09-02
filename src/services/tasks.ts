@@ -1,6 +1,6 @@
 import { prisma } from '../server/db/prisma'
 import { z } from 'zod'
-import { createTaskSchema, updateTaskSchema, finishTaskSchema } from '../validations'
+import { createTaskSchema, updateTaskSchema, finishTaskSchema, startTaskSchema } from '../validations'
 
 const taskSchema = z.object({
   id: z.string(),
@@ -127,6 +127,29 @@ export async function finishTask(input: unknown): Promise<TaskDTO> {
     data: {
       status: 'completado',
       endDate: toDate(data.endDate)!,
+    }
+  })
+  return {
+    id: row.id,
+    sectorId: row.sectorId,
+    sectorName: row.sectorName,
+    type: row.type,
+    status: mapStatusToUi(row.status as unknown as string),
+    startDate: toDateString(row.startDate)!,
+    endDate: toDateString(row.endDate),
+    assignedWorkerId: row.assignedWorkerId,
+    assignedWorkerName: row.assignedWorkerName,
+    observations: row.observations ?? undefined,
+  }
+}
+
+export async function startTask(input: unknown): Promise<TaskDTO> {
+  const data = startTaskSchema.parse(input)
+  const row = await prisma.task.update({
+    where: { id: data.id },
+    data: {
+      status: 'en_proceso',
+      startDate: toDate(data.startDate)!,
     }
   })
   return {

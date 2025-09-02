@@ -1,9 +1,15 @@
 "use client"
 
+import * as React from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import type { SectorPolygon } from "@/src/types"
 import { Edit, History, MapPin, Trash2 } from "lucide-react"
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog"
+import { Button as UIButton } from "@/components/ui/button"
+import SectorMiniMap from "./sector-mini-map"
+import dynamic from "next/dynamic"
+const SectorLeafletThumbnail = dynamic(() => import("./sector-leaflet-thumbnail"), { ssr: false })
 import { useNotifications } from "@/src/hooks"
 
 interface SectorRowDetailsProps {
@@ -15,6 +21,7 @@ interface SectorRowDetailsProps {
 
 export default function SectorRowDetails({ sector, onEdit, onDelete, onViewHistory }: SectorRowDetailsProps) {
   const { showSimulatedFeature } = useNotifications()
+  const [confirmOpen, setConfirmOpen] = React.useState(false)
   
   const handleEditData = () => {
     if (onEdit) onEdit(sector)
@@ -26,12 +33,9 @@ export default function SectorRowDetails({ sector, onEdit, onDelete, onViewHisto
     else showSimulatedFeature(`Ver historial/tareas del sector: ${sector.name}`)
   }
 
-  const handleDelete = () => {
-    if (onDelete) onDelete(sector.id)
-    else showSimulatedFeature(`Eliminar sector: ${sector.name}`)
-  }
+  const handleDelete = () => setConfirmOpen(true)
 
-  return (
+  return (<>
     <Card className="bg-slate-800 border-slate-700 text-slate-50 shadow-inner">
       <CardHeader>
         <CardTitle className="text-xl text-sky-400">Detalles de: {sector.name}</CardTitle>
@@ -58,9 +62,13 @@ export default function SectorRowDetails({ sector, onEdit, onDelete, onViewHisto
           </div>
           <div>
             <h4 className="font-semibold text-slate-300 mb-2">Miniatura del Mapa</h4>
-            <div className="bg-slate-700 h-40 rounded-md flex items-center justify-center">
-              <MapPin className="w-12 h-12 text-slate-500" />
-              <p className="ml-2 text-slate-500">Mapa centrado en {sector.name}</p>
+            {/* Contenedor cuadrado: usa aspect-square para 1:1 */}
+            <div className="hidden sm:block aspect-square w-2/3 mx-auto">
+              <SectorLeafletThumbnail path={sector.path} className="bg-slate-700 h-full w-full" />
+            </div>
+            {/* Fallback SVG en móviles, también cuadrado */}
+            <div className="sm:hidden aspect-square w-2/3 mx-auto">
+              <SectorMiniMap path={sector.path} height={undefined} className="bg-slate-700 h-full w-full" />
             </div>
           </div>
         </div>
@@ -89,5 +97,22 @@ export default function SectorRowDetails({ sector, onEdit, onDelete, onViewHisto
         </div>
       </CardContent>
     </Card>
-  )
+    <Dialog open={confirmOpen} onOpenChange={setConfirmOpen}>
+      <DialogContent className="bg-slate-800 text-slate-50 border-slate-700 z-[9999]">
+        <DialogHeader>
+          <DialogTitle className="text-sky-400">Eliminar sector</DialogTitle>
+          <DialogDescription className="text-slate-400">
+            Se eliminarán el sector "{sector.name}" y todas sus tareas asociadas. Esta acción no se puede deshacer.
+          </DialogDescription>
+        </DialogHeader>
+        <DialogFooter>
+          <UIButton variant="outline" onClick={() => setConfirmOpen(false)} className="border-slate-600 text-slate-300 hover:bg-slate-700">Cancelar</UIButton>
+          <UIButton
+            variant="destructive"
+            onClick={() => { setConfirmOpen(false); onDelete?.(sector.id) }}
+          >Eliminar</UIButton>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  </>)
 }

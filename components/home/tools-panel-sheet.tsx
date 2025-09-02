@@ -20,11 +20,21 @@ export default function ToolsPanelSheet({ isOpen, onOpenChange, onNewSector, onA
   const [status, setStatus] = useState({ pendiente: true, enProceso: true, completado: true })
 
   useEffect(() => {
-    if (initialFilters) {
-      setTypes(initialFilters.types)
-      setStatus(initialFilters.status)
-    }
-  }, [initialFilters, isOpen])
+    if (!isOpen || !initialFilters) return
+    // Sincronizar valores iniciales solo al abrir para evitar bucles por identidad distinta
+    setTypes((prev) => {
+      const next = initialFilters.types
+      return prev.poda === next.poda && prev.cortePasto === next.cortePasto ? prev : next
+    })
+    setStatus((prev) => {
+      const next = initialFilters.status
+      return (
+        prev.pendiente === next.pendiente &&
+        prev.enProceso === next.enProceso &&
+        prev.completado === next.completado
+      ) ? prev : next
+    })
+  }, [isOpen])
 
   const handleApply = () => {
     onApplyFilters?.({ types, status })

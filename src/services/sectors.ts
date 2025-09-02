@@ -61,6 +61,33 @@ export async function createSector(input: unknown): Promise<SectorDTO> {
       observaciones: data.observaciones ?? null,
     }
   })
+
+  // Crear tarea 1:1 asociada al sector recién creado (pendiente, sin iniciar)
+  try {
+    // Asegurar trabajador "Sin asignar"
+    let unassigned = await prisma.worker.findFirst({ where: { name: 'Sin asignar' } })
+    if (!unassigned) {
+      unassigned = await prisma.worker.create({ data: { name: 'Sin asignar', observaciones: null } })
+    }
+    // Crear tarea base (status pendiente). Usamos la fecha de hoy como startDate base.
+    const today = new Date()
+    await prisma.task.create({
+      data: {
+        sectorId: row.id,
+        sectorName: row.name,
+        type: row.type === 'Corte_de_pasto' ? 'Corte de pasto' : 'Poda',
+        status: 'pendiente',
+        startDate: new Date(Date.UTC(today.getUTCFullYear(), today.getUTCMonth(), today.getUTCDate())),
+        endDate: null,
+        assignedWorkerId: unassigned.id,
+        assignedWorkerName: unassigned.name,
+        observations: null,
+      }
+    })
+  } catch (e) {
+    // No interrumpir la creación del sector si falla la tarea; loguear en servidor
+    console.error('No se pudo crear la tarea inicial del sector', e)
+  }
   return {
     id: row.id,
     name: row.name,
@@ -97,10 +124,8 @@ export async function updateSector(input: unknown): Promise<SectorDTO> {
 }
 
 export async function deleteSector(id: string): Promise<{ ok: true }> {
-  const totalTasks = await prisma.task.count({ where: { sectorId: id } })
-  if (totalTasks > 0) {
-    throw new Error('No se puede eliminar: el sector tiene tareas asociadas')
-  }
+  // Al eliminar un sector, eliminamos en cascada sus tareas asociadas
+  await prisma.task.deleteMany({ where: { sectorId: id } })
   await prisma.sector.delete({ where: { id } })
   return { ok: true }
 }

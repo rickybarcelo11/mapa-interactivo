@@ -7,6 +7,7 @@ import EditSectorModal from "@/components/sectors/edit-sector-modal"
 import { Button } from "@/components/ui/button"
 import { PlusCircle } from "lucide-react"
 import type { SectorPolygon } from "@/src/types"
+import { useSectorsStore } from "@/src/stores/sectors-store"
 import { useNotifications } from "@/src/hooks"
 import { useRouter } from "next/navigation"
 
@@ -20,7 +21,7 @@ export interface SectorFiltersState {
 }
 
 export default function SectorsView() {
-  const [sectors, setSectors] = useState<SectorPolygon[]>([])
+  const sectorsStore = useSectorsStore((s) => s)
   const [editingSector, setEditingSector] = useState<SectorPolygon | null>(null)
   const [filters, setFilters] = useState<SectorFiltersState>({
     nombre: "",
@@ -32,12 +33,8 @@ export default function SectorsView() {
   const router = useRouter()
 
   useEffect(() => {
-    const load = async () => {
-      const res = await fetch('/api/sectores', { cache: 'no-store' })
-      const data = await res.json()
-      setSectors(data)
-    }
-    load().catch(console.error)
+    sectorsStore.initializeSectors()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   const handleFilterChange = (newFilters: Partial<SectorFiltersState>) => {
@@ -45,7 +42,7 @@ export default function SectorsView() {
   }
 
   // Simulación de filtrado
-  const filteredSectors = sectors.filter((sector) => {
+  const filteredSectors = sectorsStore.sectors.filter((sector) => {
     return (
       (filters.nombre === "" || sector.name.toLowerCase().includes(filters.nombre.toLowerCase())) &&
       (filters.tipo === "todos" || sector.type === filters.tipo) &&
@@ -81,7 +78,7 @@ export default function SectorsView() {
             setEditingSector(sector)
           }}
           onDelete={(sectorId) => {
-            setSectors((prev) => prev.filter((s) => s.id !== sectorId))
+            sectorsStore.deleteSector(sectorId)
           }}
           onViewHistory={handleViewHistory}
         />
@@ -92,7 +89,7 @@ export default function SectorsView() {
           onOpenChange={() => setEditingSector(null)}
           sector={editingSector}
           onSave={(updated) => {
-            setSectors((prev) => prev.map((s) => (s.id === updated.id ? { ...s, ...updated } : s)))
+            sectorsStore.updateSector(updated)
             setEditingSector(null)
           }}
         />

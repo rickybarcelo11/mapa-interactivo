@@ -15,6 +15,7 @@ interface SectorsState {
   loading: boolean
   error: string | null
   selectedSector: SectorPolygon | null
+  initialized: boolean
   filters: {
     name: string
     type: string
@@ -62,6 +63,7 @@ const initialState: SectorsState = {
   loading: false,
   error: null,
   selectedSector: null,
+  initialized: false,
   filters: {
     name: '',
     type: 'todos',
@@ -99,74 +101,64 @@ export const useSectorsStore = create<SectorsState & SectorsActions>()(
       }),
 
       // Acciones CRUD con validación
-      addSector: (sectorData) => {
+      addSector: async (sectorData) => {
+        set({ loading: true })
         try {
-          // Validar datos de entrada
           const validatedData = validateCreateSector(sectorData)
-          
-          // Crear nuevo sector con ID único
-          const newSector: SectorPolygon = {
-            ...validatedData,
-            id: `sector-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
-          }
-          
-          // Validar el sector completo
-          const finalValidatedSector = validateSector(newSector)
-          
+          const { createSectorApi } = await import('../services/provider')
+          const created = await createSectorApi(validatedData as unknown as SectorPolygon)
+          const finalValidatedSector = validateSector(created)
           set((state) => ({
             sectors: [...state.sectors, finalValidatedSector],
             error: null,
-            _filteredSectorsCache: null // Limpiar cache al agregar sector
+            _filteredSectorsCache: null,
+            loading: false
           }))
         } catch (error) {
-          if (error instanceof Error) {
-            set({ error: `Error al crear sector: ${error.message}` })
-          } else {
-            set({ error: 'Error inesperado al crear sector' })
-          }
+          set({ error: error instanceof Error ? `Error al crear sector: ${error.message}` : 'Error inesperado al crear sector', loading: false })
         }
       },
 
-      updateSector: (sectorData) => {
+      updateSector: async (sectorData) => {
+        set({ loading: true })
         try {
-          // Validar datos de entrada
           const validatedData = validateUpdateSector(sectorData)
-          
+          const { updateSectorApi } = await import('../services/provider')
+          const updated = await updateSectorApi(validatedData as unknown as SectorPolygon & { id: string })
+          const finalValidatedSector = validateSector(updated)
           set((state) => {
-            const sectorIndex = state.sectors.findIndex(s => s.id === sectorData.id)
-            if (sectorIndex === -1) {
-              throw new Error('Sector no encontrado')
-            }
-            
-            const updatedSector = { ...state.sectors[sectorIndex], ...validatedData }
-            const finalValidatedSector = validateSector(updatedSector)
-            
+            const sectorIndex = state.sectors.findIndex(s => s.id === finalValidatedSector.id)
+            if (sectorIndex === -1) throw new Error('Sector no encontrado')
             const newSectors = [...state.sectors]
             newSectors[sectorIndex] = finalValidatedSector
-            
             return {
               sectors: newSectors,
-              selectedSector: state.selectedSector?.id === sectorData.id ? finalValidatedSector : state.selectedSector,
+              selectedSector: state.selectedSector?.id === finalValidatedSector.id ? finalValidatedSector : state.selectedSector,
               error: null,
-              _filteredSectorsCache: null // Limpiar cache al actualizar sector
+              _filteredSectorsCache: null,
+              loading: false
             }
           })
         } catch (error) {
-          if (error instanceof Error) {
-            set({ error: `Error al actualizar sector: ${error.message}` })
-          } else {
-            set({ error: 'Error inesperado al actualizar sector' })
-          }
+          set({ error: error instanceof Error ? `Error al actualizar sector: ${error.message}` : 'Error inesperado al actualizar sector', loading: false })
         }
       },
 
-      deleteSector: (id) => {
-        set((state) => ({
-          sectors: state.sectors.filter(s => s.id !== id),
-          selectedSector: state.selectedSector?.id === id ? null : state.selectedSector,
-          error: null,
-          _filteredSectorsCache: null // Limpiar cache al eliminar sector
-        }))
+      deleteSector: async (id) => {
+        set({ loading: true })
+        try {
+          const { deleteSectorApi } = await import('../services/provider')
+          await deleteSectorApi(id)
+          set((state) => ({
+            sectors: state.sectors.filter(s => s.id !== id),
+            selectedSector: state.selectedSector?.id === id ? null : state.selectedSector,
+            error: null,
+            _filteredSectorsCache: null,
+            loading: false
+          }))
+        } catch (error) {
+          set({ error: error instanceof Error ? `Error al eliminar sector: ${error.message}` : 'Error inesperado al eliminar sector', loading: false })
+        }
       },
 
       // Acciones de datos
@@ -189,14 +181,16 @@ export const useSectorsStore = create<SectorsState & SectorsActions>()(
       },
 
       initializeSectors: async () => {
-        set({ loading: true, error: null })
+        const { initialized } = get()
+        if (initialized) return
+        set({ loading: true, error: null, initialized: true })
         try {
           const { getSectors } = await import('../services/provider')
           const data = await getSectors()
           const validated = data.map((s) => validateSector(s))
           set({ sectors: validated, loading: false, error: null, _filteredSectorsCache: null })
         } catch (error) {
-          set({ error: error instanceof Error ? error.message : 'Error al inicializar sectores', loading: false })
+          set({ error: error instanceof Error ? error.message : 'Error al inicializar sectores', loading: false, initialized: false })
         }
       },
 

@@ -1,4 +1,4 @@
-import { listTasks, createTask, updateTask, deleteTask, finishTask } from '../../../src/services/tasks'
+import { listTasks, createTask, updateTask, deleteTask, finishTask, startTask } from '../../../src/services/tasks'
 import { NextRequest } from 'next/server'
 
 export const runtime = 'nodejs'
@@ -44,11 +44,13 @@ export async function PUT(req: NextRequest) {
 export async function PATCH(req: NextRequest) {
   try {
     const body = await req.json()
-    const finished = await finishTask(body)
-    return new Response(JSON.stringify(finished), { status: 200, headers: { 'content-type': 'application/json' } })
+    // Si trae endDate -> finalizar; si trae startDate -> iniciar
+    const payload = body as { id: string; endDate?: string; startDate?: string }
+    const result = payload.endDate ? await finishTask(body) : await startTask(body)
+    return new Response(JSON.stringify(result), { status: 200, headers: { 'content-type': 'application/json' } })
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error)
-    return new Response(JSON.stringify({ message: 'Error al finalizar tarea', error: message }), { status: 400, headers: { 'content-type': 'application/json' } })
+    return new Response(JSON.stringify({ message: 'Error al actualizar estado de tarea', error: message }), { status: 400, headers: { 'content-type': 'application/json' } })
   }
 }
 

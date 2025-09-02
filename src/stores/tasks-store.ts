@@ -46,6 +46,7 @@ interface TasksActions {
   updateTask: (taskData: UpdateTaskData) => void
   deleteTask: (id: string) => void
   finishTask: (finishData: FinishTaskData) => void
+  startTask: (data: { id: string; startDate: string }) => void
   
   // Acciones de datos
   setTasks: (tasks: Task[]) => void
@@ -93,136 +94,106 @@ export const useTasksStore = create<TasksState & TasksActions>()(
       clearFilters: () => set({ filters: initialState.filters }),
 
       // Acciones CRUD con validación
-      addTask: (taskData) => {
+      addTask: async (taskData) => {
+        set({ loading: true })
         try {
-          // Validar datos de entrada
           const validatedData = validateCreateTask(taskData)
-          
-          // Validar fechas si están presentes
           if (validatedData.endDate && !validateTaskDates(validatedData.startDate, validatedData.endDate)) {
             throw new Error('La fecha de fin debe ser posterior a la fecha de inicio')
           }
-          
-          // Crear nueva tarea con ID único
-          const newTask: Task = {
-            ...validatedData,
-            id: `task-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
-          }
-          
-          // Validar la tarea completa
-          const finalValidatedTask = validateTask(newTask)
-          
+          const { createTaskApi } = await import('../services/provider')
+          const created = await createTaskApi(validatedData)
+          const finalValidatedTask = validateTask(created)
+          set((state) => ({ tasks: [...state.tasks, finalValidatedTask], error: null, loading: false }))
+        } catch (error) {
+          set({ error: error instanceof Error ? `Error al crear tarea: ${error.message}` : 'Error inesperado al crear tarea', loading: false })
+        }
+      },
+
+      updateTask: async (taskData) => {
+        set({ loading: true })
+        try {
+          const validatedData = validateUpdateTask(taskData)
+          const { updateTaskApi } = await import('../services/provider')
+          const updated = await updateTaskApi(validatedData)
+          const finalValidatedTask = validateTask(updated)
+          set((state) => {
+            const taskIndex = state.tasks.findIndex(t => t.id === finalValidatedTask.id)
+            if (taskIndex === -1) throw new Error('Tarea no encontrada')
+            const newTasks = [...state.tasks]
+            newTasks[taskIndex] = finalValidatedTask
+            return {
+              tasks: newTasks,
+              selectedTask: state.selectedTask?.id === finalValidatedTask.id ? finalValidatedTask : state.selectedTask,
+              error: null,
+              loading: false
+            }
+          })
+        } catch (error) {
+          set({ error: error instanceof Error ? `Error al actualizar tarea: ${error.message}` : 'Error inesperado al actualizar tarea', loading: false })
+        }
+      },
+
+      deleteTask: async (id) => {
+        set({ loading: true })
+        try {
+          const { deleteTaskApi } = await import('../services/provider')
+          await deleteTaskApi(id)
           set((state) => ({
-            tasks: [...state.tasks, finalValidatedTask],
-            error: null
+            tasks: state.tasks.filter(t => t.id !== id),
+            selectedTask: state.selectedTask?.id === id ? null : state.selectedTask,
+            error: null,
+            loading: false
           }))
         } catch (error) {
-          if (error instanceof Error) {
-            set({ error: `Error al crear tarea: ${error.message}` })
-          } else {
-            set({ error: 'Error inesperado al crear tarea' })
-          }
+          set({ error: error instanceof Error ? `Error al eliminar tarea: ${error.message}` : 'Error inesperado al eliminar tarea', loading: false })
         }
       },
 
-      updateTask: (taskData) => {
+      finishTask: async (finishData) => {
+        set({ loading: true })
         try {
-          // Validar datos de actualización
-          const validatedData = validateUpdateTask(taskData)
-          
-          set((state) => {
-            const taskIndex = state.tasks.findIndex(t => t.id === validatedData.id)
-            if (taskIndex === -1) {
-              throw new Error('Tarea no encontrada')
-            }
-            
-            // Crear tarea actualizada
-            const updatedTask: Task = {
-              ...state.tasks[taskIndex],
-              ...validatedData
-            }
-            
-            // Validar fechas si están presentes
-            if (updatedTask.endDate && !validateTaskDates(updatedTask.startDate, updatedTask.endDate)) {
-              throw new Error('La fecha de fin debe ser posterior a la fecha de inicio')
-            }
-            
-            // Validar la tarea actualizada
-            const finalValidatedTask = validateTask(updatedTask)
-            
-            const newTasks = [...state.tasks]
-            newTasks[taskIndex] = finalValidatedTask
-            
-            return {
-              tasks: newTasks,
-              selectedTask: state.selectedTask?.id === validatedData.id 
-                ? finalValidatedTask 
-                : state.selectedTask,
-              error: null
-            }
-          })
-        } catch (error) {
-          if (error instanceof Error) {
-            set({ error: `Error al actualizar tarea: ${error.message}` })
-          } else {
-            set({ error: 'Error inesperado al actualizar tarea' })
-          }
-        }
-      },
-
-      deleteTask: (id) => {
-        set((state) => ({
-          tasks: state.tasks.filter(t => t.id !== id),
-          selectedTask: state.selectedTask?.id === id ? null : state.selectedTask,
-          error: null
-        }))
-      },
-
-      finishTask: (finishData) => {
-        try {
-          // Validar datos de finalización
           const validatedData = validateFinishTask(finishData)
-          
+          const { finishTaskApi } = await import('../services/provider')
+          const updated = await finishTaskApi(validatedData)
+          const finalValidatedTask = validateTask(updated)
           set((state) => {
-            const taskIndex = state.tasks.findIndex(t => t.id === validatedData.id)
-            if (taskIndex === -1) {
-              throw new Error('Tarea no encontrada')
-            }
-            
-            const task = state.tasks[taskIndex]
-            
-            // Validar que la fecha de fin sea posterior a la fecha de inicio
-            if (!validateTaskDates(task.startDate, validatedData.endDate)) {
-              throw new Error('La fecha de fin debe ser posterior a la fecha de inicio')
-            }
-            
-            // Actualizar tarea
-            const updatedTask: Task = {
-              ...task,
-              status: 'completado',
-              endDate: validatedData.endDate
-            }
-            
-            // Validar la tarea actualizada
-            const finalValidatedTask = validateTask(updatedTask)
-            
+            const taskIndex = state.tasks.findIndex(t => t.id === finalValidatedTask.id)
+            if (taskIndex === -1) throw new Error('Tarea no encontrada')
             const newTasks = [...state.tasks]
             newTasks[taskIndex] = finalValidatedTask
-            
             return {
               tasks: newTasks,
-              selectedTask: state.selectedTask?.id === validatedData.id 
-                ? finalValidatedTask 
-                : state.selectedTask,
-              error: null
+              selectedTask: state.selectedTask?.id === finalValidatedTask.id ? finalValidatedTask : state.selectedTask,
+              error: null,
+              loading: false
             }
           })
         } catch (error) {
-          if (error instanceof Error) {
-            set({ error: `Error al finalizar tarea: ${error.message}` })
-          } else {
-            set({ error: 'Error inesperado al finalizar tarea' })
-          }
+          set({ error: error instanceof Error ? `Error al finalizar tarea: ${error.message}` : 'Error inesperado al finalizar tarea', loading: false })
+        }
+      },
+
+      startTask: async ({ id, startDate }) => {
+        set({ loading: true })
+        try {
+          const { startTaskApi } = await import('../services/provider')
+          const updated = await startTaskApi({ id, startDate })
+          const finalValidatedTask = validateTask(updated)
+          set((state) => {
+            const taskIndex = state.tasks.findIndex(t => t.id === finalValidatedTask.id)
+            if (taskIndex === -1) throw new Error('Tarea no encontrada')
+            const newTasks = [...state.tasks]
+            newTasks[taskIndex] = finalValidatedTask
+            return {
+              tasks: newTasks,
+              selectedTask: state.selectedTask?.id === finalValidatedTask.id ? finalValidatedTask : state.selectedTask,
+              error: null,
+              loading: false
+            }
+          })
+        } catch (error) {
+          set({ error: error instanceof Error ? `Error al iniciar tarea: ${error.message}` : 'Error inesperado al iniciar tarea', loading: false })
         }
       },
 

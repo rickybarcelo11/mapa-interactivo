@@ -9,7 +9,7 @@ import { Calendar } from "@/components/ui/calendar"
 import { format } from "date-fns"
 import { es } from "date-fns/locale"
 import type { DateRange } from "react-day-picker"
-import type { Task, Worker } from "@/views/tasks-view"
+import type { Task, Worker } from "@/src/types"
 
 interface TasksFiltersProps {
   workers: Worker[]
@@ -74,7 +74,7 @@ function TasksFilters({ workers, sectors, onFilterChange, allTasks }: TasksFilte
         task.sectorName.toLowerCase().includes(searchText) ||
         task.type.toLowerCase().includes(searchText) ||
         task.assignedWorkerName.toLowerCase().includes(searchText) ||
-        task.observations.toLowerCase().includes(searchText)
+        (task.observations ? task.observations.toLowerCase().includes(searchText) : false)
 
       const statusMatch = status === "todos" || task.status === status
       const typeMatch = type === "todos" || task.type === type

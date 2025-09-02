@@ -76,79 +76,57 @@ export const useWorkersStore = create<WorkersState & WorkersActions>()(
       clearFilters: () => set({ filters: initialState.filters }),
 
       // Acciones CRUD con validación
-      addWorker: (workerData) => {
+      addWorker: async (workerData) => {
+        set({ loading: true })
         try {
-          // Validar datos de entrada
           const validatedData = validateCreateWorker(workerData)
-          
-          // Crear nuevo trabajador con ID único
-          const newWorker: Worker = {
-            ...validatedData,
-            id: `worker-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
-          }
-          
-          // Validar el trabajador completo
-          const finalValidatedWorker = validateWorker(newWorker)
-          
-          set((state) => ({
-            workers: [...state.workers, finalValidatedWorker],
-            error: null
-          }))
+          const { createWorker } = await import('../services/provider')
+          const created = await createWorker(validatedData as unknown as Omit<Worker,'id'>)
+          const finalValidatedWorker = validateWorker(created)
+          set((state) => ({ workers: [...state.workers, finalValidatedWorker], error: null, loading: false }))
         } catch (error) {
-          if (error instanceof Error) {
-            set({ error: `Error al crear trabajador: ${error.message}` })
-          } else {
-            set({ error: 'Error inesperado al crear trabajador' })
-          }
+          set({ error: error instanceof Error ? `Error al crear trabajador: ${error.message}` : 'Error inesperado al crear trabajador', loading: false })
         }
       },
 
-      updateWorker: (workerData) => {
+      updateWorker: async (workerData) => {
+        set({ loading: true })
         try {
-          // Validar datos de actualización
           const validatedData = validateUpdateWorker(workerData)
-          
+          const { updateWorkerApi } = await import('../services/provider')
+          const updated = await updateWorkerApi(validatedData as unknown as Worker & { id: string })
+          const finalValidatedWorker = validateWorker(updated)
           set((state) => {
-            const workerIndex = state.workers.findIndex(w => w.id === validatedData.id)
-            if (workerIndex === -1) {
-              throw new Error('Trabajador no encontrado')
-            }
-            
-            // Crear trabajador actualizado
-            const updatedWorker: Worker = {
-              ...state.workers[workerIndex],
-              ...validatedData
-            }
-            
-            // Validar el trabajador actualizado
-            const finalValidatedWorker = validateWorker(updatedWorker)
-            
+            const workerIndex = state.workers.findIndex(w => w.id === finalValidatedWorker.id)
+            if (workerIndex === -1) throw new Error('Trabajador no encontrado')
             const newWorkers = [...state.workers]
             newWorkers[workerIndex] = finalValidatedWorker
-            
             return {
               workers: newWorkers,
-              selectedWorker: state.selectedWorker?.id === validatedData.id 
-                ? finalValidatedWorker 
-                : state.selectedWorker,
-              error: null
+              selectedWorker: state.selectedWorker?.id === finalValidatedWorker.id ? finalValidatedWorker : state.selectedWorker,
+              error: null,
+              loading: false
             }
           })
         } catch (error) {
-          if (error instanceof Error) {
-            set({ error: `Error al actualizar trabajador: ${error.message}` })
-          } else {
-            set({ error: 'Error inesperado al actualizar trabajador' })
-          }
+          set({ error: error instanceof Error ? `Error al actualizar trabajador: ${error.message}` : 'Error inesperado al actualizar trabajador', loading: false })
         }
       },
 
-      deleteWorker: (id) => {
-        set((state) => ({
-          workers: state.workers.filter(w => w.id !== id),
-          selectedWorker: state.selectedWorker?.id === id ? null : state.selectedWorker,
-          error: null
-        }))
+      deleteWorker: async (id) => {
+        set({ loading: true })
+        try {
+          const { deleteWorkerApi } = await import('../services/provider')
+          await deleteWorkerApi(id)
+          set((state) => ({
+            workers: state.workers.filter(w => w.id !== id),
+            selectedWorker: state.selectedWorker?.id === id ? null : state.selectedWorker,
+            error: null,
+            loading: false
+          }))
+        } catch (error) {
+          set({ error: error instanceof Error ? `Error al eliminar trabajador: ${error.message}` : 'Error inesperado al eliminar trabajador', loading: false })
+        }
       },
 
       // Acciones de datos

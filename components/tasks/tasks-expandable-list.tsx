@@ -13,6 +13,7 @@ interface TasksExpandableListProps {
   onEdit: (task: Task) => void
   onDelete: (taskId: string) => void
   onFinish: (taskId: string) => void
+  onStart: (taskId: string) => void
 }
 
 // Componente memoizado para la fila de tarea
@@ -22,7 +23,8 @@ const TaskRow = memo(({
   onToggle, 
   onEdit, 
   onDelete, 
-  onFinish 
+  onFinish,
+  onStart 
 }: {
   task: Task
   isExpanded: boolean
@@ -30,6 +32,7 @@ const TaskRow = memo(({
   onEdit: (task: Task) => void
   onDelete: (taskId: string) => void
   onFinish: (taskId: string) => void
+  onStart: (taskId: string) => void
 }) => {
   const handleToggle = useCallback(() => {
     onToggle(task.id)
@@ -47,7 +50,12 @@ const TaskRow = memo(({
     onFinish(task.id)
   }, [task.id, onFinish])
 
+  const handleStart = useCallback(() => {
+    onStart(task.id)
+  }, [task.id, onStart])
+
   const isCompleted = useMemo(() => task.status === "completado", [task.status])
+  const canStart = useMemo(() => task.status === "pendiente" || !task.startDate, [task.status, task.startDate])
 
   return (
     <Fragment key={task.id}>
@@ -71,6 +79,9 @@ const TaskRow = memo(({
         <TableCell className="text-slate-300 py-3 px-4">{task.endDate || "N/A"}</TableCell>
         <TableCell className="py-3 px-4 space-x-2" onClick={(e) => e.stopPropagation()}>
           <Button size="sm" variant="outline" onClick={handleEdit}>Editar</Button>
+          {canStart && (
+            <Button size="sm" onClick={handleStart} className="bg-blue-600 hover:bg-blue-500">Iniciar</Button>
+          )}
           {!isCompleted && (
             <Button size="sm" onClick={handleFinish} className="bg-green-600 hover:bg-green-500">Finalizar</Button>
           )}
@@ -90,7 +101,7 @@ const TaskRow = memo(({
 
 TaskRow.displayName = "TaskRow"
 
-function TasksExpandableList({ tasks, autoExpandTaskId, onEdit, onDelete, onFinish }: TasksExpandableListProps) {
+function TasksExpandableList({ tasks, autoExpandTaskId, onEdit, onDelete, onFinish, onStart }: TasksExpandableListProps) {
   const [expandedTaskId, setExpandedTaskId] = useState<string | null>(null)
 
   useEffect(() => {
@@ -132,6 +143,7 @@ function TasksExpandableList({ tasks, autoExpandTaskId, onEdit, onDelete, onFini
               onEdit={onEdit}
               onDelete={onDelete}
               onFinish={onFinish}
+              onStart={onStart}
             />
           ))}
         </TableBody>
