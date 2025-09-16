@@ -12,6 +12,11 @@ Fecha: 2025-09-02
 - Tareas (UX): lista expandible con panel de Historial; soporte de URL params `taskId`, `sectorId`, `workerId` y autoexpansión.
 - Sectores (UX): modal de edición real (Zod) y eliminación; "Ver historial" redirige a `/tareas?sectorId=...&autoExpand=1`.
 - Home (mapa): filtros aplicables desde el panel a los polígonos.
+- Home (mapa): nombres de sectores como tooltip en hover (no permanentes) para evitar superposición al alejar.
+- Sectores: miniatura de mapa real (Leaflet) cuadrada con auto-zoom al polígono.
+- Persistencia real: tarea 1:1 creada automáticamente al crear sector (pendiente, "Sin asignar"). Botones Iniciar/Finalizar tarea con PATCH.
+- Eliminación de sector: confirmación en UI y borrado en cascada de tareas asociadas.
+- Fixes: loops de carga, z-index sobre modales, zoom dinámico y limpieza de duplicados.
 - Limpieza y fixes: problemas de HMR/caché `.next` resueltos; warnings de keys corregidos.
 - **PASO 6 COMPLETADO**: Optimización de rendimiento implementada con `useMemo`/`useCallback`/`React.memo` en componentes críticos.
 - **LIMPIEZA COMPLETADA**: Estandarización del gestor de paquetes (solo npm, eliminado pnpm-lock.yaml).
@@ -110,8 +115,8 @@ npm run prisma:seed
 3. ~~Configuración de seguridad API key~~ ✅ **COMPLETADO**
 4. Integración fina con backend
    - Estados de loading/error vacíos; reintentos; paginación y filtros en API.
-5. Autenticación y protección de rutas
-   - Manejo de tokens/refresh; guard en `app/layout.tsx`; expiración de sesión.
+5. (Descartado) Autenticación y protección de rutas
+   - Proyecto con un único administrador. No se implementará autenticación.
 6. Tipado estricto
    - Eliminar `any` residuales; tipos derivados de Zod en servicios y stores.
 7. Lazy loading y code-splitting
@@ -147,11 +152,11 @@ Reiniciar dev server cuando: se cambien deps, `next.config.mjs`, `tsconfig.json`
 - **NUEVO**: Implementar cache en stores para selectores computados costosos.
 - **NUEVO**: Usar solo `npm` como gestor de paquetes para evitar conflictos.
 - **NUEVO**: Backend activo - usar servicios/API; mocks solo para pruebas aisladas.
-- **NUEVO**: API key de Google Maps debe estar en .env.local (NO subir al repo).
+- **NUEVO**: API key de Google Maps ya no se usa (OpenStreetMap).
 
 ## Idea para próxima sesión
 
-- **PRIORIDAD 1**: Autenticación básica + guard de rutas y expiración de sesión
-- **PRIORIDAD 2**: Paginación/filtrado desde API en tablas grandes
-- **PRIORIDAD 3**: Estados de error/loading consistentes y reintentos
+- **PRIORIDAD 1**: Paginación/filtrado desde API en tablas grandes
+- **PRIORIDAD 2**: Estados de error/loading consistentes y reintentos
+- **PRIORIDAD 3**: Tipado estricto (eliminar `any`, tipos derivados de Zod)
 - **PRIORIDAD 4**: Configurar pipeline CI (lint/build/test) y migraciones

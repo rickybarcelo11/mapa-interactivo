@@ -2,18 +2,31 @@
 
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import type { Task } from "@/src/types"
+import { useEffect, useState } from "react"
+import { getTaskHistory } from "@/src/services/provider"
 
 interface TaskHistoryPanelProps {
   task: Task
 }
 
 export default function TaskHistoryPanel({ task }: TaskHistoryPanelProps) {
-  // Historial simulado por ahora
-  const history = [
-    { id: `${task.id}-h1`, date: task.startDate, action: `Tarea creada para ${task.sectorName}` },
-    task.assignedWorkerName ? { id: `${task.id}-h2`, date: task.startDate, action: `Asignada a ${task.assignedWorkerName}` } : null,
-    task.endDate ? { id: `${task.id}-h3`, date: task.endDate, action: `Marcada como ${task.status}` } : null,
-  ].filter(Boolean) as { id: string; date: string; action: string }[]
+  const [history, setHistory] = useState<{ id: string; date: string; action: string }[]>([])
+
+  useEffect(() => {
+    let mounted = true
+    getTaskHistory(task.id)
+      .then((rows) => {
+        if (!mounted) return
+        setHistory(rows.map(r => ({ id: r.id, date: r.createdAt, action: r.message })))
+      })
+      .catch(() => {
+        // si falla, mostrar algo básico
+        setHistory([
+          { id: `${task.id}-h1`, date: task.startDate, action: `Tarea para ${task.sectorName}` },
+        ])
+      })
+    return () => { mounted = false }
+  }, [task.id, task.sectorName, task.startDate])
 
   return (
     <Card className="bg-slate-800 border-slate-700 text-slate-50">

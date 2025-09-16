@@ -1,10 +1,25 @@
-import { listSectors, createSector, updateSector, deleteSector } from '../../../src/services/sectors'
+import { listSectors, listSectorsPage, createSector, updateSector, deleteSector } from '../../../src/services/sectors'
 import { NextRequest } from 'next/server'
 
 export const runtime = 'nodejs'
 
-export async function GET(_req: NextRequest) {
+export async function GET(req: NextRequest) {
   try {
+    const { searchParams } = new URL(req.url)
+    const hasParams = ['page','pageSize','name','type','status','direccion'].some((p) => searchParams.has(p))
+    if (hasParams) {
+      const page = Number(searchParams.get('page') || '1')
+      const pageSize = Number(searchParams.get('pageSize') || '20')
+      const name = searchParams.get('name') || undefined
+      const type = (searchParams.get('type') || undefined) as any
+      const status = (searchParams.get('status') || undefined) as any
+      const direccion = searchParams.get('direccion') || undefined
+      const resp = await listSectorsPage({ page, pageSize, name, type, status, direccion })
+      return new Response(JSON.stringify(resp), {
+        status: 200,
+        headers: { 'content-type': 'application/json' }
+      })
+    }
     const sectors = await listSectors()
     return new Response(JSON.stringify(sectors), {
       status: 200,
