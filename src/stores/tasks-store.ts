@@ -129,6 +129,20 @@ export const useTasksStore = create<TasksState & TasksActions>()(
               loading: false
             }
           })
+          // Actualización optimista del estado del sector en el store local
+          try {
+            const { useSectorsStore } = await import('./sectors-store')
+            const sectorsApi = useSectorsStore.getState()
+            const local = sectorsApi.sectors.map(s => s.id === finalValidatedTask.sectorId ? { ...s, status: finalValidatedTask.status } as any : s)
+            sectorsApi.setSectors(local as any)
+          } catch {}
+          // refrescar sectores para reflejar estado sincronizado
+          try {
+            const { getSectors } = await import('../services/provider')
+            const sectors = await getSectors()
+            const { useSectorsStore } = await import('./sectors-store')
+            useSectorsStore.getState().setSectors(sectors as any)
+          } catch {}
         } catch (error) {
           set({ error: error instanceof Error ? `Error al actualizar tarea: ${error.message}` : 'Error inesperado al actualizar tarea', loading: false })
         }
@@ -169,6 +183,20 @@ export const useTasksStore = create<TasksState & TasksActions>()(
               loading: false
             }
           })
+          // Actualización optimista del estado del sector en el store local
+          try {
+            const { useSectorsStore } = await import('./sectors-store')
+            const sectorsApi = useSectorsStore.getState()
+            const local = sectorsApi.sectors.map(s => s.id === finalValidatedTask.sectorId ? { ...s, status: finalValidatedTask.status } as any : s)
+            sectorsApi.setSectors(local as any)
+          } catch {}
+          // refrescar sectores para reflejar estado sincronizado
+          try {
+            const { getSectors } = await import('../services/provider')
+            const sectors = await getSectors()
+            const { useSectorsStore } = await import('./sectors-store')
+            useSectorsStore.getState().setSectors(sectors as any)
+          } catch {}
         } catch (error) {
           set({ error: error instanceof Error ? `Error al finalizar tarea: ${error.message}` : 'Error inesperado al finalizar tarea', loading: false })
         }
@@ -192,6 +220,13 @@ export const useTasksStore = create<TasksState & TasksActions>()(
               loading: false
             }
           })
+          // refrescar sectores para reflejar estado sincronizado
+          try {
+            const { getSectors } = await import('../services/provider')
+            const sectors = await getSectors()
+            const { useSectorsStore } = await import('./sectors-store')
+            useSectorsStore.getState().setSectors(sectors as any)
+          } catch {}
         } catch (error) {
           set({ error: error instanceof Error ? `Error al iniciar tarea: ${error.message}` : 'Error inesperado al iniciar tarea', loading: false })
         }

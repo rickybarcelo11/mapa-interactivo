@@ -40,6 +40,61 @@ export async function listSectors(): Promise<SectorDTO[]> {
   return mapped.map((m) => sectorSchema.parse(m))
 }
 
+export interface ListSectorsPageParams {
+  page?: number
+  pageSize?: number
+  name?: string
+  type?: SectorDTO['type'] | 'todos'
+  status?: SectorDTO['status'] | 'todos'
+  direccion?: string
+}
+
+export interface PaginatedResponse<T> {
+  items: T[]
+  total: number
+  page: number
+  pageSize: number
+}
+
+export async function listSectorsPage(params: ListSectorsPageParams): Promise<PaginatedResponse<SectorDTO>> {
+  const page = Math.max(1, Math.floor(params.page ?? 1))
+  const pageSize = Math.min(100, Math.max(1, Math.floor(params.pageSize ?? 20)))
+
+  const where: Parameters<typeof prisma.sector.findMany>[0]['where'] = {}
+  if (params.name && params.name.trim() !== '') {
+    where.name = { contains: params.name.trim(), mode: 'insensitive' }
+  }
+  if (params.type && params.type !== 'todos') {
+    where.type = mapTypeToDb(params.type)
+  }
+  if (params.status && params.status !== 'todos') {
+    where.status = mapStatusToDb(params.status)
+  }
+  if (params.direccion && params.direccion.trim() !== '') {
+    where.direccion = { contains: params.direccion.trim(), mode: 'insensitive' }
+  }
+
+  const total = await prisma.sector.count({ where })
+  const rows = await prisma.sector.findMany({
+    where,
+    orderBy: { name: 'asc' },
+    skip: (page - 1) * pageSize,
+    take: pageSize,
+  })
+
+  const items = rows.map((r) => sectorSchema.parse({
+    id: r.id,
+    name: r.name,
+    type: mapTypeToUi(r.type as unknown as string),
+    status: mapStatusToUi(r.status as unknown as string),
+    path: (r.path as unknown as { lat: number; lng: number }[]) ?? [],
+    direccion: r.direccion ?? undefined,
+    observaciones: r.observaciones ?? undefined,
+  }))
+
+  return { items, total, page, pageSize }
+}
+
 function mapStatusToDb(status: SectorDTO['status']): 'pendiente' | 'en_proceso' | 'completado' {
   return status === 'en proceso' ? 'en_proceso' : status
 }

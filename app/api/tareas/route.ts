@@ -1,10 +1,33 @@
-import { listTasks, createTask, updateTask, deleteTask, finishTask, startTask } from '../../../src/services/tasks'
+import { listTasks, listTasksPage, createTask, updateTask, deleteTask, finishTask, startTask, listTaskHistory } from '../../../src/services/tasks'
 import { NextRequest } from 'next/server'
 
 export const runtime = 'nodejs'
 
-export async function GET(_req: NextRequest) {
+export async function GET(req: NextRequest) {
   try {
+    const { searchParams } = new URL(req.url)
+    const historyTaskId = searchParams.get('historyTaskId')
+    if (historyTaskId) {
+      const history = await listTaskHistory(historyTaskId)
+      return new Response(JSON.stringify(history), { status: 200, headers: { 'content-type': 'application/json' } })
+    }
+    const hasParams = ['page','pageSize','text','status','type','sectorId','workerId','dateFrom','dateTo'].some((p) => searchParams.has(p))
+    if (hasParams) {
+      const page = Number(searchParams.get('page') || '1')
+      const pageSize = Number(searchParams.get('pageSize') || '20')
+      const text = searchParams.get('text') || undefined
+      const status = (searchParams.get('status') || undefined) as any
+      const type = (searchParams.get('type') || undefined) as any
+      const sectorId = searchParams.get('sectorId') || undefined
+      const workerId = searchParams.get('workerId') || undefined
+      const dateFrom = searchParams.get('dateFrom') || undefined
+      const dateTo = searchParams.get('dateTo') || undefined
+      const resp = await listTasksPage({ page, pageSize, text, status, type, sectorId, workerId, dateFrom, dateTo })
+      return new Response(JSON.stringify(resp), {
+        status: 200,
+        headers: { 'content-type': 'application/json' }
+      })
+    }
     const tasks = await listTasks()
     return new Response(JSON.stringify(tasks), {
       status: 200,

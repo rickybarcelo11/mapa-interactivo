@@ -20,7 +20,10 @@ export default function HomeView() {
   const [isToolsPanelOpen, setIsToolsPanelOpen] = useState(false)
   const [selectedSector, setSelectedSector] = useState<SectorPolygon | null>(null)
   const [isNewSectorModalOpen, setIsNewSectorModalOpen] = useState(false)
-  const sectorsStore = useSectorsStore((s) => s)
+  const sectors = useSectorsStore((s) => s.sectors)
+  const initializeSectors = useSectorsStore((s) => s.initializeSectors)
+  const updateSector = useSectorsStore((s) => s.updateSector)
+  const addSector = useSectorsStore((s) => s.addSector)
   const [isDrawingMode, setIsDrawingMode] = useState(false)
   const [pendingSectorData, setPendingSectorData] = useState<Partial<SectorPolygon> | null>(null)
   const [typeFilters, setTypeFilters] = useState({ poda: true, cortePasto: true })
@@ -28,7 +31,7 @@ export default function HomeView() {
   const { showSectorCreated, showSectorUpdated } = useNotifications()
 
   useEffect(() => {
-    sectorsStore.initializeSectors()
+    initializeSectors()
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
@@ -51,10 +54,10 @@ export default function HomeView() {
     if (!pendingSectorData) return
     const closedPath = [...path, path[0]]
     if (pendingSectorData.id) {
-      sectorsStore.updateSector({ id: pendingSectorData.id, path: closedPath } as Partial<SectorPolygon> & { id: string })
+      updateSector({ id: pendingSectorData.id, path: closedPath } as Partial<SectorPolygon> & { id: string })
       showSectorUpdated(pendingSectorData.name || 'Sector')
     } else {
-      sectorsStore.addSector({
+      addSector({
         name: pendingSectorData.name!,
         type: pendingSectorData.type as SectorType,
         status: pendingSectorData.status as SectorStatus,
@@ -69,12 +72,12 @@ export default function HomeView() {
   }
 
   const filteredSectors = useMemo(() => {
-    return sectorsStore.sectors.filter((s) => {
+    return sectors.filter((s) => {
       const typeOk = (s.type === "Poda" && typeFilters.poda) || (s.type === "Corte de pasto" && typeFilters.cortePasto)
       const statusOk = (s.status === "pendiente" && statusFilters.pendiente) || (s.status === "en proceso" && statusFilters.enProceso) || (s.status === "completado" && statusFilters.completado)
       return typeOk && statusOk
     })
-  }, [sectorsStore.sectors, typeFilters, statusFilters])
+  }, [sectors, typeFilters, statusFilters])
 
   return (
     <div className="flex flex-col">
@@ -109,7 +112,7 @@ export default function HomeView() {
             setIsDrawingMode(true);
           }}
           onSave={(updated) => {
-            sectorsStore.updateSector(updated)
+            updateSector(updated)
             setSelectedSector(null)
           }}
         />

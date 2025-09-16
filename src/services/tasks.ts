@@ -48,6 +48,87 @@ export async function listTasks(): Promise<TaskDTO[]> {
   return mapped.map((m) => taskSchema.parse(m))
 }
 
+export interface ListTasksPageParams {
+  page?: number
+  pageSize?: number
+  text?: string
+  status?: TaskDTO['status'] | 'todos'
+  type?: string | 'todos'
+  sectorId?: string | 'todos'
+  workerId?: string | 'todos'
+  dateFrom?: string
+  dateTo?: string
+}
+
+export interface PaginatedResponse<T> {
+  items: T[]
+  total: number
+  page: number
+  pageSize: number
+}
+
+export async function listTasksPage(params: ListTasksPageParams): Promise<PaginatedResponse<TaskDTO>> {
+  const page = Math.max(1, Math.floor(params.page ?? 1))
+  const pageSize = Math.min(100, Math.max(1, Math.floor(params.pageSize ?? 20)))
+
+  const where: Parameters<typeof prisma.task.findMany>[0]['where'] = {}
+  const andConditions: typeof where['AND'] = []
+
+  if (params.text && params.text.trim() !== '') {
+    const text = params.text.trim()
+    andConditions.push({
+      OR: [
+        { sectorName: { contains: text, mode: 'insensitive' } },
+        { type: { contains: text, mode: 'insensitive' } },
+        { assignedWorkerName: { contains: text, mode: 'insensitive' } },
+      ]
+    })
+  }
+  if (params.status && params.status !== 'todos') {
+    andConditions.push({ status: params.status === 'en proceso' ? 'en_proceso' : params.status })
+  }
+  if (params.type && params.type !== 'todos') {
+    andConditions.push({ type: params.type })
+  }
+  if (params.sectorId && params.sectorId !== 'todos') {
+    andConditions.push({ sectorId: params.sectorId })
+  }
+  if (params.workerId && params.workerId !== 'todos') {
+    andConditions.push({ assignedWorkerId: params.workerId })
+  }
+  if (params.dateFrom) {
+    andConditions.push({ startDate: { gte: new Date(`${params.dateFrom}T00:00:00.000Z`) } })
+  }
+  if (params.dateTo) {
+    andConditions.push({ startDate: { lte: new Date(`${params.dateTo}T23:59:59.999Z`) } })
+  }
+
+  if (andConditions.length > 0) where.AND = andConditions
+
+  const total = await prisma.task.count({ where })
+  const rows = await prisma.task.findMany({
+    where,
+    orderBy: { startDate: 'desc' },
+    skip: (page - 1) * pageSize,
+    take: pageSize,
+  })
+
+  const items = rows.map((r) => taskSchema.parse({
+    id: r.id,
+    sectorId: r.sectorId,
+    sectorName: r.sectorName,
+    type: r.type,
+    status: mapStatusToUi(r.status as unknown as string),
+    startDate: toDateString(r.startDate)!,
+    endDate: toDateString(r.endDate),
+    assignedWorkerId: r.assignedWorkerId,
+    assignedWorkerName: r.assignedWorkerName,
+    observations: r.observations ?? undefined,
+  }))
+
+  return { items, total, page, pageSize }
+}
+
 function mapStatusToDb(status: TaskDTO['status']): 'pendiente' | 'en_proceso' | 'completado' {
   return status === 'en proceso' ? 'en_proceso' : status
 }
@@ -71,6 +152,17 @@ export async function createTask(input: unknown): Promise<TaskDTO> {
       assignedWorkerId: data.assignedWorkerId,
       assignedWorkerName: (data as { assignedWorkerName?: string }).assignedWorkerName ?? '',
       observations: (data as { observations?: string | null }).observations ?? null,
+    }
+  })
+  // Sincronizar estado del sector tras creación
+  try {
+    await prisma.sector.update({ where: { id: row.sectorId }, data: { status: row.status as any } })
+  } catch {}
+  await prisma.taskHistory.create({
+    data: {
+      taskId: row.id,
+      eventType: 'Created',
+      message: `Tarea creada para ${row.sectorName} (tipo: ${row.type})`
     }
   })
   return {
@@ -106,6 +198,17 @@ export async function updateTask(input: unknown): Promise<TaskDTO> {
       observations: (data as { observations?: string | null }).observations ?? undefined,
     }
   })
+  // Sincronizar estado del sector con el de la tarea actualizada
+  try {
+    await prisma.sector.update({ where: { id: row.sectorId }, data: { status: row.status as any } })
+  } catch {}
+  await prisma.taskHistory.create({
+    data: {
+      taskId: row.id,
+      eventType: 'Updated',
+      message: `Tarea actualizada (tipo: ${row.type}, estado: ${row.status})`
+    }
+  })
   return {
     id: row.id,
     sectorId: row.sectorId,
@@ -127,6 +230,17 @@ export async function finishTask(input: unknown): Promise<TaskDTO> {
     data: {
       status: 'completado',
       endDate: toDate(data.endDate)!,
+    }
+  })
+  // Marcar sector como completado
+  try {
+    await prisma.sector.update({ where: { id: row.sectorId }, data: { status: 'completado' } })
+  } catch {}
+  await prisma.taskHistory.create({
+    data: {
+      taskId: row.id,
+      eventType: 'Finished',
+      message: `Tarea finalizada en ${toDateString(row.endDate)}`
     }
   })
   return {
@@ -152,6 +266,17 @@ export async function startTask(input: unknown): Promise<TaskDTO> {
       startDate: toDate(data.startDate)!,
     }
   })
+  // Marcar sector como en_proceso
+  try {
+    await prisma.sector.update({ where: { id: row.sectorId }, data: { status: 'en_proceso' } })
+  } catch {}
+  await prisma.taskHistory.create({
+    data: {
+      taskId: row.id,
+      eventType: 'Started',
+      message: `Tarea iniciada en ${toDateString(row.startDate)}`
+    }
+  })
   return {
     id: row.id,
     sectorId: row.sectorId,
@@ -169,6 +294,11 @@ export async function startTask(input: unknown): Promise<TaskDTO> {
 export async function deleteTask(id: string): Promise<{ ok: true }> {
   await prisma.task.delete({ where: { id } })
   return { ok: true }
+}
+
+export async function listTaskHistory(taskId: string): Promise<{ id: string; eventType: string; message: string; createdAt: string }[]> {
+  const rows = await prisma.taskHistory.findMany({ where: { taskId }, orderBy: { createdAt: 'desc' } })
+  return rows.map(r => ({ id: r.id, eventType: r.eventType as unknown as string, message: r.message, createdAt: toDateString(r.createdAt as unknown as Date)! }))
 }
 
 

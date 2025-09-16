@@ -1,10 +1,23 @@
-import { listWorkers, createWorker, updateWorker, deleteWorker } from '../../../src/services/workers'
+import { listWorkers, listWorkersPage, createWorker, updateWorker, deleteWorker } from '../../../src/services/workers'
 import { NextRequest } from 'next/server'
 
 export const runtime = 'nodejs'
 
-export async function GET(_req: NextRequest) {
+export async function GET(req: NextRequest) {
   try {
+    const { searchParams } = new URL(req.url)
+    const hasParams = ['page','pageSize','name','hasActiveTasks'].some((p) => searchParams.has(p))
+    if (hasParams) {
+      const page = Number(searchParams.get('page') || '1')
+      const pageSize = Number(searchParams.get('pageSize') || '20')
+      const name = searchParams.get('name') || undefined
+      const hasActiveTasks = searchParams.get('hasActiveTasks') === '1' || searchParams.get('hasActiveTasks') === 'true'
+      const resp = await listWorkersPage({ page, pageSize, name, hasActiveTasks })
+      return new Response(JSON.stringify(resp), {
+        status: 200,
+        headers: { 'content-type': 'application/json' }
+      })
+    }
     const workers = await listWorkers()
     return new Response(JSON.stringify(workers), {
       status: 200,

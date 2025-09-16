@@ -79,8 +79,32 @@ model Task {
   createdAt           DateTime  @default(now())
   updatedAt           DateTime  @updatedAt
 
+  // Historial
+  histories           TaskHistory[]
+
   @@index([sectorId])
   @@index([assignedWorkerId])
+}
+
+/// Historial/auditoría de cambios de Tareas
+enum TaskEventType {
+  Created
+  Started
+  Finished
+  Reassigned
+  Updated
+  Reset
+}
+
+model TaskHistory {
+  id         String        @id @default(cuid())
+  taskId     String
+  task       Task          @relation(fields: [taskId], references: [id])
+  eventType  TaskEventType
+  message    String
+  createdAt  DateTime      @default(now())
+
+  @@index([taskId])
 }
 
 /// Enums para Arbolado
