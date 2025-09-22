@@ -1,6 +1,6 @@
 # Estado del Proyecto (bitácora)
 
-Fecha: 2025-09-02
+Fecha: 2025-09-22
 
 ## Resumen de la sesión
 
@@ -13,18 +13,25 @@ Fecha: 2025-09-02
 - Sectores (UX): modal de edición real (Zod) y eliminación; "Ver historial" redirige a `/tareas?sectorId=...&autoExpand=1`.
 - Home (mapa): filtros aplicables desde el panel a los polígonos.
 - Home (mapa): nombres de sectores como tooltip en hover (no permanentes) para evitar superposición al alejar.
-- Sectores: miniatura de mapa real (Leaflet) cuadrada con auto-zoom al polígono.
+- Sectores: miniatura de mapa real (Leaflet) cuadrada con auto-zoom al polígono. Ajuste de zoom desde el momento 0.
 - Persistencia real: tarea 1:1 creada automáticamente al crear sector (pendiente, "Sin asignar"). Botones Iniciar/Finalizar tarea con PATCH.
 - Eliminación de sector: confirmación en UI y borrado en cascada de tareas asociadas.
-- Fixes: loops de carga, z-index sobre modales, zoom dinámico y limpieza de duplicados.
+- Fixes: loops de carga, z-index sobre modales (Dialog/Select sobre Leaflet), ocultar box-zoom; zoom dinámico y limpieza de duplicados.
 - Limpieza y fixes: problemas de HMR/caché `.next` resueltos; warnings de keys corregidos.
 - **PASO 6 COMPLETADO**: Optimización de rendimiento implementada con `useMemo`/`useCallback`/`React.memo` en componentes críticos.
 - **PAGINACIÓN**: API con `page`/`pageSize` y filtros en `sectores`, `tareas` y `workers`; UI con selector 10/20/25.
 - **TAREAS (UX)**: Modal "Nueva tarea"; regla 1 sector = 1 tarea activa (reinicio si existe).
 - **HISTORIAL**: Prisma `TaskHistory` + endpoint `GET /api/tareas?historyTaskId=<id>` y panel de historial real.
+  - Nuevo render en ciclos Inicio/Fin mostrando empleado y observaciones por ciclo.
+  - Utilidad temporal para sembrar ciclos masivos en `/api/tareas?seedCycles=N` (solo para pruebas).
 - **SYNC SECTOR**: Estado del `Sector` se sincroniza al iniciar/finalizar/actualizar tarea.
-- **UI OPTIMISTA**: Tareas reflejan cambios al instante (iniciar/finalizar/editar); sectores refrescan en segundo plano.
+- **UI OPTIMISTA**: Tareas reflejan cambios al instante (iniciar/finalizar/editar/crear); reorden por fecha de inicio.
+  - Al crear o reiniciar tarea se fuerza refresco de la lista desde API para consistencia.
 - **HOME**: Reactividad mejorada (suscrito directamente a `sectors` del store).
+
+### Coherencia Sector ⇄ Tareas
+- Propagación del tipo de `Sector` a todas las `Task` del sector al editar.
+- Endpoint de sincronización global: `GET /api/sectores?syncTasksTypes=1` (utilidad temporal para alinear datos existentes).
 - **LIMPIEZA COMPLETADA**: Estandarización del gestor de paquetes (solo npm, eliminado pnpm-lock.yaml).
 - **BACKEND ACTIVO**: Conectado a base en la nube (Neon) con Prisma y API Next.js operativa.
 - **MAPAS**: Leaflet + OpenStreetMap activo (sin necesidad de API key de Google).
