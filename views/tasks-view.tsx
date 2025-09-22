@@ -71,12 +71,12 @@ export default function TasksView() {
     showTaskUpdated(updatedTask.sectorName)
   }
 
-  const handleCreateOrResetTask = (payload: Omit<Task, 'id'>) => {
+  const handleCreateOrResetTask = async (payload: Omit<Task, 'id'>) => {
     // Regla: 1 sector = 1 tarea activa. Si existe, la "reiniciamos" (update);
     // si no existe, la creamos.
     const existing = tasksStore.getTasksBySector(payload.sectorId)[0]
     if (existing) {
-      tasksStore.updateTask({
+      await tasksStore.updateTask({
         id: existing.id,
         sectorId: payload.sectorId,
         sectorName: payload.sectorName,
@@ -89,8 +89,11 @@ export default function TasksView() {
         observations: payload.observations,
       })
     } else {
-      tasksStore.addTask(payload)
+      await tasksStore.addTask(payload)
     }
+    // Refrescar lista desde API para asegurar consistencia y forzar re-render
+    await tasksStore.initializeTasks()
+    setPage(1)
     setIsAddModalOpen(false)
   }
 

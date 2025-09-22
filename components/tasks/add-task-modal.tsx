@@ -42,14 +42,16 @@ export default function AddTaskModal({ isOpen, onOpenChange, sectors, workers, p
 
   useEffect(() => {
     if (isOpen) {
-      setSectorId(presetSectorId || (sectors[0]?.id ?? ""))
+      // Mantener selección previa si existe; si no, primera opción disponible
+      const firstSector = sectors[0]?.id ?? ""
+      setSectorId((prev) => prev || presetSectorId || firstSector)
       setAssignedWorkerId(defaultWorkerId)
-      setType("Poda")
-      setStatus("pendiente")
+      setType((prev) => prev || "Poda")
+      setStatus((prev) => (prev || "pendiente") as any)
       setStartDate(today)
       setObservations("")
     }
-  }, [isOpen, presetSectorId, sectors, workers, today])
+  }, [isOpen, presetSectorId, sectors, workers, today, defaultWorkerId])
 
   const handleSave = () => {
     if (!sectorId || !assignedWorkerId || !type || !startDate) {

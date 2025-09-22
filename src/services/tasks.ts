@@ -302,3 +302,41 @@ export async function listTaskHistory(taskId: string): Promise<{ id: string; eve
 }
 
 
+// Utilidad de desarrollo: generar ciclos Inicio/Fin en historial para todas las tareas
+export async function seedTaskHistoryCycles(cyclesPerTask: number): Promise<{ ok: true; created: number }> {
+  const tasks = await prisma.task.findMany()
+  const workers = await prisma.worker.findMany()
+  let created = 0
+
+  for (const t of tasks) {
+    for (let i = 0; i < cyclesPerTask; i++) {
+      const worker = workers[(i + tasks.length) % Math.max(1, workers.length)]
+      // Fechas espaciadas hacia atrás en el tiempo
+      const start = new Date(Date.now() - (i * 24 + 12) * 60 * 60 * 1000)
+      const end = new Date(start.getTime() + 6 * 60 * 60 * 1000)
+
+      await prisma.taskHistory.create({
+        data: {
+          taskId: t.id,
+          eventType: 'Started',
+          message: `Inicio de ciclo | empleado: ${worker?.name ?? t.assignedWorkerName} | observaciones: Preparación de tareas` ,
+          createdAt: start,
+        }
+      })
+      created++
+      await prisma.taskHistory.create({
+        data: {
+          taskId: t.id,
+          eventType: 'Finished',
+          message: `Fin de ciclo` ,
+          createdAt: end,
+        }
+      })
+      created++
+    }
+  }
+
+  return { ok: true, created }
+}
+
+

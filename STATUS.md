@@ -19,6 +19,12 @@ Fecha: 2025-09-02
 - Fixes: loops de carga, z-index sobre modales, zoom dinámico y limpieza de duplicados.
 - Limpieza y fixes: problemas de HMR/caché `.next` resueltos; warnings de keys corregidos.
 - **PASO 6 COMPLETADO**: Optimización de rendimiento implementada con `useMemo`/`useCallback`/`React.memo` en componentes críticos.
+- **PAGINACIÓN**: API con `page`/`pageSize` y filtros en `sectores`, `tareas` y `workers`; UI con selector 10/20/25.
+- **TAREAS (UX)**: Modal "Nueva tarea"; regla 1 sector = 1 tarea activa (reinicio si existe).
+- **HISTORIAL**: Prisma `TaskHistory` + endpoint `GET /api/tareas?historyTaskId=<id>` y panel de historial real.
+- **SYNC SECTOR**: Estado del `Sector` se sincroniza al iniciar/finalizar/actualizar tarea.
+- **UI OPTIMISTA**: Tareas reflejan cambios al instante (iniciar/finalizar/editar); sectores refrescan en segundo plano.
+- **HOME**: Reactividad mejorada (suscrito directamente a `sectors` del store).
 - **LIMPIEZA COMPLETADA**: Estandarización del gestor de paquetes (solo npm, eliminado pnpm-lock.yaml).
 - **BACKEND ACTIVO**: Conectado a base en la nube (Neon) con Prisma y API Next.js operativa.
 - **MAPAS**: Leaflet + OpenStreetMap activo (sin necesidad de API key de Google).
@@ -83,6 +89,12 @@ Pasos seguros (no rompen el frontend; los mocks siguen activos hasta el final):
 - API: `GET /api/trees` entrega `{ streets, trees }` (lectura server) y `views/trees-view.tsx` consume la API.
 
 ### Conmutación a API (sin mocks)
+### Historial de tareas (nuevo)
+- Prisma: `TaskHistory` + enum `TaskEventType`.
+- Servicios: registran eventos en `create`, `start`, `finish`, `update` (y reinicio).
+- API: `GET /api/tareas?historyTaskId=<taskId>` devuelve auditoría ordenada.
+- UI: `TaskHistoryPanel` consume la API real.
+
 - Flag en `frontend/.env.local`: `NEXT_PUBLIC_USE_MOCKS=false`.
 - Vistas conectadas a API: `tareas`, `sectores`, `trabajadores`, `árboles`, `informes`.
 
@@ -91,6 +103,7 @@ Pasos seguros (no rompen el frontend; los mocks siguen activos hasta el final):
 - Neon Database Studio (branch actual): abrir "Database studio" desde el proyecto en Neon.
 - Salud API local: `http://localhost:3000/api/health`
 - Endpoints: `http://localhost:3000/api/workers`, `http://localhost:3000/api/sectores`, `http://localhost:3000/api/tareas`, `http://localhost:3000/api/trees`
+- Historial de una tarea: `http://localhost:3000/api/tareas?historyTaskId=<id>`
 
 ### Comandos útiles
 ```bash
@@ -105,6 +118,9 @@ npx prisma generate
 
 # Seed (puebla Worker/Sector/Task/Tree/StreetSection)
 npm run prisma:seed
+
+# Reset (si hay drift en desarrollo)
+npx prisma migrate reset --force
 ```
 
 
@@ -114,18 +130,22 @@ npm run prisma:seed
 2. ~~Limpieza de gestores de paquetes~~ ✅ **COMPLETADO**
 3. ~~Configuración de seguridad API key~~ ✅ **COMPLETADO**
 4. Integración fina con backend
-   - Estados de loading/error vacíos; reintentos; paginación y filtros en API.
+   - Estados de loading/error; reintentos; mover paginación UI local de `tareas`/`workers` a server si aplica.
 5. (Descartado) Autenticación y protección de rutas
    - Proyecto con un único administrador. No se implementará autenticación.
-6. Tipado estricto
+6. Bugs visuales y pulido de UI
+   - Re-render inmediato en vistas; consistencia de colores/estados; pequeños glitches.
+7. Importación de datos (Excel/CSV)
+   - Definir plantillas; validaciones; mapeo de campos; previsualización y rollback.
+8. Tipado estricto
    - Eliminar `any` residuales; tipos derivados de Zod en servicios y stores.
-7. Lazy loading y code-splitting
+9. Lazy loading y code-splitting
    - Carga diferida de vistas pesadas y componentes secundarios.
-8. Logging y monitoreo
+10. Logging y monitoreo
    - Trazas controladas por env; evaluar Sentry/LogRocket.
-9. Testing
+11. Testing
    - Unit (Zod, hooks, servicios) e integración básica (formularios/stores/API).
-10. CI/CD
+12. CI/CD
     - Lint/Build/Test en PRs y migraciones `prisma migrate deploy` en deploy.
 
 ## Cómo correr localmente
@@ -156,7 +176,8 @@ Reiniciar dev server cuando: se cambien deps, `next.config.mjs`, `tsconfig.json`
 
 ## Idea para próxima sesión
 
-- **PRIORIDAD 1**: Paginación/filtrado desde API en tablas grandes
-- **PRIORIDAD 2**: Estados de error/loading consistentes y reintentos
-- **PRIORIDAD 3**: Tipado estricto (eliminar `any`, tipos derivados de Zod)
-- **PRIORIDAD 4**: Configurar pipeline CI (lint/build/test) y migraciones
+- **PRIORIDAD 1**: Bugs visuales y reactividad en tiempo real en todas las vistas
+- **PRIORIDAD 2**: Importación Excel/CSV (plantillas + validación + preview + commit)
+- **PRIORIDAD 3**: Estados de error/loading consistentes y reintentos
+- **PRIORIDAD 4**: Tipado estricto (eliminar `any`, tipos derivados de Zod)
+- **PRIORIDAD 5**: Configurar pipeline CI (lint/build/test) y migraciones

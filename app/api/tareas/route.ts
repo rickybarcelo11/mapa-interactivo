@@ -1,4 +1,4 @@
-import { listTasks, listTasksPage, createTask, updateTask, deleteTask, finishTask, startTask, listTaskHistory } from '../../../src/services/tasks'
+import { listTasks, listTasksPage, createTask, updateTask, deleteTask, finishTask, startTask, listTaskHistory, seedTaskHistoryCycles } from '../../../src/services/tasks'
 import { NextRequest } from 'next/server'
 
 export const runtime = 'nodejs'
@@ -10,6 +10,13 @@ export async function GET(req: NextRequest) {
     if (historyTaskId) {
       const history = await listTaskHistory(historyTaskId)
       return new Response(JSON.stringify(history), { status: 200, headers: { 'content-type': 'application/json' } })
+    }
+    // Endpoint de utilería: /api/tareas?seedCycles=10
+    const seedCycles = searchParams.get('seedCycles')
+    if (seedCycles) {
+      const num = Math.min(50, Math.max(1, Number(seedCycles)))
+      const res = await seedTaskHistoryCycles(num)
+      return new Response(JSON.stringify(res), { status: 200, headers: { 'content-type': 'application/json' } })
     }
     const hasParams = ['page','pageSize','text','status','type','sectorId','workerId','dateFrom','dateTo'].some((p) => searchParams.has(p))
     if (hasParams) {

@@ -168,6 +168,8 @@ function MapInteractive({
     if (!isDrawingMode) setDrawingPoints([])
   }, [isDrawingMode])
 
+  // (revertido) no forzar zoom extra al entrar en modo dibujo
+
   const handleMapClick = useCallback((e: { latlng: { lat: number; lng: number } }) => {
     if (!isDrawingMode) return;
     const { lat, lng } = e.latlng;
@@ -217,9 +219,11 @@ function MapInteractive({
       <MapContainer 
         center={center} 
         zoom={zoom} 
+        
         style={{ width: "100%", height: "100%" }} 
         className="absolute inset-0 z-0"
         ref={mapRef}
+        boxZoom={false}
       >
         <TileLayer
           attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'

@@ -104,7 +104,12 @@ export const useTasksStore = create<TasksState & TasksActions>()(
           const { createTaskApi } = await import('../services/provider')
           const created = await createTaskApi(validatedData)
           const finalValidatedTask = validateTask(created)
-          set((state) => ({ tasks: [...state.tasks, finalValidatedTask], error: null, loading: false }))
+          set((state) => {
+            const newTasks = [finalValidatedTask, ...state.tasks]
+            // ordenar por fecha de inicio desc para que la nueva tarea aparezca arriba
+            newTasks.sort((a, b) => new Date(b.startDate).getTime() - new Date(a.startDate).getTime())
+            return { tasks: newTasks, error: null, loading: false }
+          })
         } catch (error) {
           set({ error: error instanceof Error ? `Error al crear tarea: ${error.message}` : 'Error inesperado al crear tarea', loading: false })
         }
@@ -122,6 +127,8 @@ export const useTasksStore = create<TasksState & TasksActions>()(
             if (taskIndex === -1) throw new Error('Tarea no encontrada')
             const newTasks = [...state.tasks]
             newTasks[taskIndex] = finalValidatedTask
+            // Reordenar por fecha de inicio desc en caso de que cambie
+            newTasks.sort((a, b) => new Date(b.startDate).getTime() - new Date(a.startDate).getTime())
             return {
               tasks: newTasks,
               selectedTask: state.selectedTask?.id === finalValidatedTask.id ? finalValidatedTask : state.selectedTask,
@@ -176,6 +183,7 @@ export const useTasksStore = create<TasksState & TasksActions>()(
             if (taskIndex === -1) throw new Error('Tarea no encontrada')
             const newTasks = [...state.tasks]
             newTasks[taskIndex] = finalValidatedTask
+            newTasks.sort((a, b) => new Date(b.startDate).getTime() - new Date(a.startDate).getTime())
             return {
               tasks: newTasks,
               selectedTask: state.selectedTask?.id === finalValidatedTask.id ? finalValidatedTask : state.selectedTask,
@@ -213,6 +221,7 @@ export const useTasksStore = create<TasksState & TasksActions>()(
             if (taskIndex === -1) throw new Error('Tarea no encontrada')
             const newTasks = [...state.tasks]
             newTasks[taskIndex] = finalValidatedTask
+            newTasks.sort((a, b) => new Date(b.startDate).getTime() - new Date(a.startDate).getTime())
             return {
               tasks: newTasks,
               selectedTask: state.selectedTask?.id === finalValidatedTask.id ? finalValidatedTask : state.selectedTask,

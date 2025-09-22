@@ -167,6 +167,15 @@ export async function updateSector(input: unknown): Promise<SectorDTO> {
       observaciones: data.observaciones ?? undefined,
     }
   })
+  // Mantener coherencia: si cambió el tipo del sector, propagarlo a sus tareas
+  try {
+    if (data.type) {
+      await prisma.task.updateMany({
+        where: { sectorId: row.id },
+        data: { type: data.type },
+      })
+    }
+  } catch {}
   return {
     id: row.id,
     name: row.name,
@@ -183,6 +192,18 @@ export async function deleteSector(id: string): Promise<{ ok: true }> {
   await prisma.task.deleteMany({ where: { sectorId: id } })
   await prisma.sector.delete({ where: { id } })
   return { ok: true }
+}
+
+// Utilidad: sincronizar tipos de tareas con el tipo del sector correspondiente
+export async function syncAllTaskTypesWithSectors(): Promise<{ ok: true; updated: number }> {
+  const sectors = await prisma.sector.findMany()
+  let updated = 0
+  for (const s of sectors) {
+    const newType = s.type === 'Corte_de_pasto' ? 'Corte de pasto' : 'Poda'
+    const res = await prisma.task.updateMany({ where: { sectorId: s.id }, data: { type: newType } })
+    updated += res.count
+  }
+  return { ok: true, updated }
 }
 
 

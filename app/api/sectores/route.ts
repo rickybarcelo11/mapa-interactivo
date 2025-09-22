@@ -1,4 +1,4 @@
-import { listSectors, listSectorsPage, createSector, updateSector, deleteSector } from '../../../src/services/sectors'
+import { listSectors, listSectorsPage, createSector, updateSector, deleteSector, syncAllTaskTypesWithSectors } from '../../../src/services/sectors'
 import { NextRequest } from 'next/server'
 
 export const runtime = 'nodejs'
@@ -6,8 +6,13 @@ export const runtime = 'nodejs'
 export async function GET(req: NextRequest) {
   try {
     const { searchParams } = new URL(req.url)
-    const hasParams = ['page','pageSize','name','type','status','direccion'].some((p) => searchParams.has(p))
+    const hasParams = ['page','pageSize','name','type','status','direccion','syncTasksTypes'].some((p) => searchParams.has(p))
     if (hasParams) {
+      // Endpoint de utilidad: sincronizar tipos de tareas con tipo de sector
+      if (searchParams.get('syncTasksTypes') === '1') {
+        const res = await syncAllTaskTypesWithSectors()
+        return new Response(JSON.stringify(res), { status: 200, headers: { 'content-type': 'application/json' } })
+      }
       const page = Number(searchParams.get('page') || '1')
       const pageSize = Number(searchParams.get('pageSize') || '20')
       const name = searchParams.get('name') || undefined
