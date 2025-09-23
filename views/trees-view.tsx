@@ -8,6 +8,7 @@ import StreetSectionView from "@/components/trees/street-section-view"
 import IndividualTreeView from "@/components/trees/individual-tree-view"
 import AddTreeModal from "@/components/trees/add-tree-modal"
 import ImportTreesModal from "@/components/trees/import-trees-modal"
+import ImportPreviewModal from "@/components/trees/import-preview-modal"
 import type { TreeSection, StreetWithSections, IndividualTree } from "@/src/types"
 import { useNotifications } from "@/src/hooks"
 
@@ -18,6 +19,7 @@ export default function TreesView() {
   const [individualTrees, setIndividualTrees] = useState<IndividualTree[]>([])
   const [isAddModalOpen, setIsAddModalOpen] = useState(false)
   const [isImportOpen, setIsImportOpen] = useState(false)
+  const [isPreviewOpen, setIsPreviewOpen] = useState(false)
   const { showTreeCreated, showSimulatedFeature } = useNotifications()
 
   useEffect(() => {
@@ -136,7 +138,7 @@ export default function TreesView() {
           <Button onClick={() => setIsAddModalOpen(true)} className="bg-sky-500 hover:bg-sky-600 text-white">
             <PlusCircle className="mr-2 h-5 w-5" /> Agregar Árbol
           </Button>
-          <Button variant="outline" onClick={() => setIsImportOpen(true)} className="border-slate-600 text-slate-300 hover:bg-slate-700">
+          <Button variant="outline" onClick={() => setIsPreviewOpen(true)} className="border-slate-600 text-slate-300 hover:bg-slate-700">
             <Upload className="mr-2 h-5 w-5" /> Importar Excel
           </Button>
           {/* Podrías tener un Dropdown para múltiples formatos de exportación */}
@@ -207,9 +209,9 @@ export default function TreesView() {
       </Tabs>
 
       <AddTreeModal isOpen={isAddModalOpen} onOpenChange={setIsAddModalOpen} onSave={handleAddTree} />
-      <ImportTreesModal
-        isOpen={isImportOpen}
-        onOpenChange={setIsImportOpen}
+      <ImportPreviewModal
+        isOpen={isPreviewOpen}
+        onOpenChange={setIsPreviewOpen}
         onImported={async () => {
           const reload = await fetch('/api/trees', { cache: 'no-store' })
           const payload = await reload.json()

@@ -66,9 +66,18 @@ export async function POST(req: NextRequest) {
     return { __row: idx + 2, species, streetName, streetNumber, status, sidewalk, observations }
   }).filter(r => r.species && r.streetName && r.streetNumber)
 
+  // Invalid rows (faltan campos clave)
+  const invalids: Array<{ row: number; reason: string }> = []
+  rows.forEach((r, idx) => {
+    const species = trimSpaces(toStr(getField(r, ['Especie', 'species', 'Species'])))
+    const streetName = trimSpaces(toStr(getField(r, ['Calle', 'streetName', 'Street', 'StreetName'])))
+    const streetNumber = normalizeStreetNumber(getField(r, ['Altura', 'streetNumber', 'StreetNumber', 'Alt']))
+    if (!species || !streetName || !streetNumber) invalids.push({ row: idx + 2, reason: 'Faltan Especie/Calle/Altura' })
+  })
+
   // 2) Sugerencias de unificación de calles (similaridad)
   const streetNames = Array.from(new Set(normalized.map(r => r.streetName))).sort()
-  const suggestions: Array<{ canonical: string; variants: string[] }> = []
+  const suggestions: Array<{ canonical: string; variants: string[]; details: Array<{ name: string; count: number; score: number }> }> = []
   const used = new Set<string>()
   function similarity(a: string, b: string) {
     // Similaridad simple: Jaccard sobre bigramas
@@ -90,13 +99,32 @@ export async function POST(req: NextRequest) {
     for (let j = i + 1; j < streetNames.length; j++) {
       const b = streetNames[j]
       if (used.has(b)) continue
-      if (similarity(a, b) >= 0.85) group.push(b)
+      const score = similarity(a, b)
+      if (score >= 0.85) group.push(b)
     }
     group.forEach(g => used.add(g))
-    if (group.length > 1) suggestions.push({ canonical: a, variants: group })
+    if (group.length > 1) {
+      const counts = (name: string) => normalized.filter(r => r.streetName === name).length
+      const details = group.map(name => ({ name, count: counts(name), score: similarity(a, name) }))
+      suggestions.push({ canonical: a, variants: group, details })
+    }
   }
 
-  return new Response(JSON.stringify({ rows: normalized, suggestions }), { status: 200, headers: { 'content-type': 'application/json' } })
+  // 3) Duplicados exactos por clave
+  const dupMap = new Map<string, number>()
+  for (const r of normalized) {
+    const key = `${r.streetName}|${r.streetNumber}|${r.species}|${r.sidewalk || ''}`
+    dupMap.set(key, (dupMap.get(key) || 0) + 1)
+  }
+  const duplicates = Array.from(dupMap.entries())
+    .filter(([_, c]) => c > 1)
+    .map(([key, count]) => {
+      const [streetName, streetNumber, species, sidewalk] = key.split('|')
+      return { streetName, streetNumber, species, sidewalk, count }
+    })
+    .sort((a, b) => b.count - a.count)
+
+  return new Response(JSON.stringify({ rows: normalized, suggestions, duplicates, invalids }), { status: 200, headers: { 'content-type': 'application/json' } })
 }
 
 

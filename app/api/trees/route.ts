@@ -4,6 +4,18 @@ import * as XLSX from 'xlsx'
 import { prisma } from '../../../src/server/db/prisma'
 
 export const runtime = 'nodejs'
+// Helpers compartidos
+function mapStatusUiToDb(raw: any): 'Sano' | 'Enfermo' | 'Necesita_Poda' | 'Seco' | 'Recien_Plantado' | 'Malo' {
+  const s = String(raw ?? '').trim().toLowerCase()
+  if (!s) return 'Sano'
+  if (s === 'sano') return 'Sano'
+  if (s === 'enfermo') return 'Enfermo'
+  if (s === 'necesita poda' || s === 'necesita_poda' || s === 'necesita  poda') return 'Necesita_Poda'
+  if (s === 'recien plantado' || s === 'recién plantado' || s === 'recien_plantado') return 'Recien_Plantado'
+  if (s === 'seco') return 'Seco'
+  if (s === 'malo') return 'Malo'
+  return 'Sano'
+}
 
 export async function GET() {
   try {
@@ -34,24 +46,31 @@ export async function POST(req: NextRequest) {
         if (!Array.isArray(body?.rows)) {
           return new Response(JSON.stringify({ message: 'Se requiere multipart/form-data o JSON { rows: [...] }' }), { status: 400 })
         }
-        let created = 0
+        // Dedupe local y carga por lotes
+        const rows: Array<{ species: string; status: any; streetName: string; streetNumber: string; sidewalk: any; observations: string | null }> = []
+        const seen = new Set<string>()
         for (const r of body.rows as any[]) {
-          if (!r.species || !r.streetName || !r.streetNumber) continue
-          await prisma.tree.create({
-            data: {
-              species: r.species,
-              status: (r.status ?? 'Sano') as any,
-              streetName: r.streetName,
-              streetNumber: String(r.streetNumber),
-              sidewalk: (r.sidewalk ?? null) as any,
-              plantingDate: null,
-              lastPruningDate: null,
-              observations: r.observations ?? null,
-            }
+          if (!r?.species || !r?.streetName || !r?.streetNumber) continue
+          const key = `${String(r.streetName).trim().toLowerCase()}|${String(r.streetNumber).trim()}|${String(r.species).trim().toLowerCase()}|${r.sidewalk || ''}`
+          if (seen.has(key)) continue
+          seen.add(key)
+          rows.push({
+            species: String(r.species),
+            status: mapStatusUiToDb(r.status) as any,
+            streetName: String(r.streetName),
+            streetNumber: String(r.streetNumber),
+            sidewalk: (r.sidewalk ?? null) as any,
+            observations: (r.observations ?? null) as any,
           })
-          created++
         }
-        return new Response(JSON.stringify({ ok: true, created, mode: 'json' }), { status: 200, headers: { 'content-type': 'application/json' } })
+        let created = 0
+        const CHUNK = 1000
+        for (let i = 0; i < rows.length; i += CHUNK) {
+          const chunk = rows.slice(i, i + CHUNK)
+          const res = await prisma.tree.createMany({ data: chunk })
+          created += res.count
+        }
+        return new Response(JSON.stringify({ ok: true, created, mode: 'json', received: (body.rows as any[]).length, deduped: rows.length }), { status: 200, headers: { 'content-type': 'application/json' } })
       } catch {}
       return new Response(JSON.stringify({ message: 'Se requiere multipart/form-data' }), { status: 400 })
     }
