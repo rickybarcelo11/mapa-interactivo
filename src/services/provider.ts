@@ -126,6 +126,12 @@ export async function getTaskHistory(taskId: string): Promise<{ id: string; even
   return (await res.json()) as any
 }
 
+export async function getSectorHistory(sectorId: string): Promise<Array<{ task: any; history: Array<{ id: string; eventType: string; message: string; createdAt: string }> }>> {
+  const res = await fetch(`/api/tareas?historySectorId=${encodeURIComponent(sectorId)}`, { cache: 'no-store' })
+  if (!res.ok) throw new Error('No se pudo obtener historial del sector')
+  return (await res.json()) as any
+}
+
 export async function createTaskApi(data: Omit<Task, 'id'> & { id?: string }): Promise<Task> {
   if (USE_MOCKS) throw new Error('createTask no disponible en modo mocks')
   const res = await fetch('/api/tareas', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(data) })
@@ -159,6 +165,19 @@ export async function startTaskApi(data: { id: string; startDate: string }): Pro
   const res = await fetch('/api/tareas', { method: 'PATCH', headers: { 'content-type': 'application/json' }, body: JSON.stringify(data) })
   if (!res.ok) throw new Error('No se pudo iniciar tarea')
   return (await res.json()) as Task
+}
+
+export async function getReport(params: { dateFrom?: string; dateTo?: string; status?: string; type?: string; sectorId?: string; workerId?: string }): Promise<any> {
+  const qs = new URLSearchParams()
+  if (params.dateFrom) qs.set('dateFrom', params.dateFrom)
+  if (params.dateTo) qs.set('dateTo', params.dateTo)
+  if (params.status) qs.set('status', params.status)
+  if (params.type) qs.set('type', params.type)
+  if (params.sectorId) qs.set('sectorId', params.sectorId)
+  if (params.workerId) qs.set('workerId', params.workerId)
+  const res = await fetch(`/api/informes?${qs.toString()}`, { cache: 'no-store' })
+  if (!res.ok) throw new Error('No se pudo obtener el informe')
+  return await res.json()
 }
 
 

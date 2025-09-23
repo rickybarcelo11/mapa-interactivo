@@ -6,6 +6,36 @@ export const runtime = 'nodejs'
 export async function GET(req: NextRequest) {
   try {
     const { searchParams } = new URL(req.url)
+    const historySectorId = searchParams.get('historySectorId')
+    if (historySectorId) {
+      // Devolver historial completo de todas las tareas del sector, agrupado por tarea
+      // Para mantener compatibilidad, devolvemos un arreglo de ciclos por tarea
+      const { prisma } = await import('../../../src/server/db/prisma')
+      // Tareas del sector, más recientes primero
+      const tasks = await prisma.task.findMany({ where: { sectorId: historySectorId }, orderBy: { startDate: 'desc' } })
+      const taskIds = tasks.map(t => t.id)
+      const histories = taskIds.length
+        ? await prisma.taskHistory.findMany({ where: { taskId: { in: taskIds } }, orderBy: { createdAt: 'desc' } })
+        : []
+      const items = tasks.map(t => ({
+        task: {
+          id: t.id,
+          sectorId: t.sectorId,
+          sectorName: t.sectorName,
+          type: t.type,
+          status: t.status,
+          startDate: t.startDate,
+          endDate: t.endDate,
+          assignedWorkerId: t.assignedWorkerId,
+          assignedWorkerName: t.assignedWorkerName,
+          observations: t.observations,
+        },
+        history: histories
+          .filter(h => h.taskId === t.id)
+          .map(h => ({ id: h.id, eventType: h.eventType, message: h.message, createdAt: h.createdAt }))
+      }))
+      return new Response(JSON.stringify(items), { status: 200, headers: { 'content-type': 'application/json' } })
+    }
     const historyTaskId = searchParams.get('historyTaskId')
     if (historyTaskId) {
       const history = await listTaskHistory(historyTaskId)

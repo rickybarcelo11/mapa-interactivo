@@ -10,7 +10,7 @@ import { format } from "date-fns"
 import { es } from "date-fns/locale"
 import type { DateRange } from "react-day-picker"
 import type { ReportFiltersState } from "@/views/reports-view"
-import type { Worker } from "@/views/tasks-view"
+import type { Worker } from "@/src/types"
 import type { SectorPolygon } from "@/src/types"
 
 interface ReportFiltersComponentProps {

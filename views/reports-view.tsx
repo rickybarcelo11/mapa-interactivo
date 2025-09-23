@@ -8,6 +8,7 @@ import ReportTasksTable from "@/components/reports/report-tasks-table"
 import { Button } from "@/components/ui/button"
 import { Download, FileText, FileSpreadsheet } from "lucide-react"
 import type { Task, Worker, SectorPolygon, SectorStatus } from "@/src/types"
+import { getReport } from "@/src/services/provider"
 import { useNotifications } from "@/src/hooks"
 
 // Datos desde API
@@ -41,7 +42,6 @@ export default function ReportsView() {
     workerId: "todos",
   })
   const [reportData, setReportData] = useState<ReportData | null>(null)
-  const [allTasks, setAllTasks] = useState<Task[]>([])
   const [workers, setWorkers] = useState<Worker[]>([])
   const [sectors, setSectors] = useState<Array<Pick<SectorPolygon, 'id' | 'name'>>>([])
   const [showReport, setShowReport] = useState(false)
@@ -49,17 +49,14 @@ export default function ReportsView() {
 
   useEffect(() => {
     const load = async () => {
-      const [tasksRes, workersRes, sectorsRes] = await Promise.all([
-        fetch('/api/tareas', { cache: 'no-store' }),
+      const [workersRes, sectorsRes] = await Promise.all([
         fetch('/api/workers', { cache: 'no-store' }),
         fetch('/api/sectores', { cache: 'no-store' }),
       ])
-      const [t, w, s] = await Promise.all([
-        tasksRes.json(),
+      const [w, s] = await Promise.all([
         workersRes.json(),
         sectorsRes.json(),
       ])
-      setAllTasks(t)
       setWorkers(w)
       setSectors((s as SectorPolygon[]).map(({ id, name }) => ({ id, name })))
     }
@@ -67,83 +64,24 @@ export default function ReportsView() {
   }, [])
 
   const handleApplyFilters = useCallback((currentFilters: ReportFiltersState) => {
-    setFilters(currentFilters) // Guardar los filtros aplicados
-
-    const filtered = allTasks.filter((task) => {
-      const taskStartDate = new Date(task.startDate)
-      const dateMatch =
-        !currentFilters.dateRange ||
-        ((!currentFilters.dateRange.from || taskStartDate >= currentFilters.dateRange.from) &&
-          (!currentFilters.dateRange.to || taskStartDate <= currentFilters.dateRange.to))
-
-      return (
-        dateMatch &&
-        (currentFilters.taskType === "todos" || task.type === currentFilters.taskType) &&
-        (currentFilters.status === "todos" || task.status === currentFilters.status) &&
-        (currentFilters.sectorId === "todos" || task.sectorId === currentFilters.sectorId) &&
-        (currentFilters.workerId === "todos" || task.assignedWorkerId === currentFilters.workerId)
-      )
+    setFilters(currentFilters)
+    const dateFrom = currentFilters.dateRange?.from ? new Date(currentFilters.dateRange.from).toISOString().slice(0,10) : undefined
+    const dateTo = currentFilters.dateRange?.to ? new Date(currentFilters.dateRange.to).toISOString().slice(0,10) : undefined
+    getReport({
+      dateFrom,
+      dateTo,
+      status: currentFilters.status === 'todos' ? undefined : currentFilters.status,
+      type: currentFilters.taskType === 'todos' ? undefined : currentFilters.taskType,
+      sectorId: currentFilters.sectorId === 'todos' ? undefined : currentFilters.sectorId,
+      workerId: currentFilters.workerId === 'todos' ? undefined : currentFilters.workerId,
+    }).then((data) => {
+      setReportData(data)
+      setShowReport(true)
+    }).catch((e) => {
+      console.error(e)
+      setReportData(null)
+      setShowReport(true)
     })
-
-    // Calcular estadísticas
-    const totalTasks = filtered.length
-    const completedTasks = filtered.filter((t) => t.status === "completado").length
-    const pendingTasks = filtered.filter((t) => t.status === "pendiente").length
-    const inProgressTasks = filtered.filter((t) => t.status === "en proceso").length
-    const completionPercentage = totalTasks > 0 ? (completedTasks / totalTasks) * 100 : 0
-
-    const types = [...new Set(filtered.map((t) => t.type))]
-    const completionByType = types.map((type) => {
-      const tasksOfType = filtered.filter((t) => t.type === type)
-      const completedOfType = tasksOfType.filter((t) => t.status === "completado").length
-      return {
-        type,
-        total: tasksOfType.length,
-        completed: completedOfType,
-        percentage: tasksOfType.length > 0 ? (completedOfType / tasksOfType.length) * 100 : 0,
-      }
-    })
-
-    const sectorCounts = filtered.reduce(
-      (acc, task) => {
-        acc[task.sectorName] = (acc[task.sectorName] || 0) + 1
-        return acc
-      },
-      {} as Record<string, number>,
-    )
-    const activeSectors = Object.entries(sectorCounts)
-      .map(([name, taskCount]) => ({ name, taskCount }))
-      .sort((a, b) => b.taskCount - a.taskCount)
-      .slice(0, 5) // Top 5
-
-    const tasksByStatusForChart: { name: SectorStatus; value: number }[] = [
-      { name: "pendiente", value: pendingTasks },
-      { name: "en proceso", value: inProgressTasks },
-      { name: "completado", value: completedTasks },
-    ]
-    const tasksByTypeForChart = Object.entries(
-      filtered.reduce(
-        (acc, task) => {
-          acc[task.type] = (acc[task.type] || 0) + 1
-          return acc
-        },
-        {} as Record<string, number>,
-      ),
-    ).map(([name, value]) => ({ name, value }))
-
-    setReportData({
-      filteredTasks: filtered,
-      totalTasks,
-      completedTasks,
-      pendingTasks,
-      inProgressTasks,
-      completionPercentage,
-      completionByType,
-      activeSectors,
-      tasksByStatusForChart,
-      tasksByTypeForChart,
-    })
-    setShowReport(true)
   }, [])
 
   const handleExport = (format: "PDF" | "Excel" | "CSV") => {

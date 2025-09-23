@@ -6,7 +6,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Button } from "@/components/ui/button"
 import { X, Edit, Trash2 } from "lucide-react"
-import type { IndividualTree, TreeStatus } from "@/views/trees-view"
+import type { IndividualTree, TreeStatus } from "@/src/types"
 import { useNotifications } from "@/src/hooks"
 import ConfirmDeleteDialog from "@/components/tasks/confirm-delete-dialog" // Reutilizamos
 // AddTreeModal se maneja desde TreesView, pero la edición podría usar uno similar o el mismo.
@@ -121,6 +121,10 @@ export default function IndividualTreeView({ trees: initialTrees }: IndividualTr
       </div>
 
       <div className="bg-slate-800 shadow-xl rounded-lg p-0 overflow-hidden">
+        <div className="flex items-center justify-end px-4 py-3 border-b border-slate-700">
+          <span className="text-sm text-slate-300">Totalidad de árboles cargados: </span>
+          <span className="ml-2 text-sm font-semibold text-sky-400">{filteredTrees.length}</span>
+        </div>
         {filteredTrees.length === 0 ? (
           <p className="p-4 text-center text-slate-400">No se encontraron árboles con los filtros aplicados.</p>
         ) : (
