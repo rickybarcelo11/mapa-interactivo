@@ -29,6 +29,16 @@ export default function StreetSectionView({ streets }: StreetSectionViewProps) {
     return <p className="p-4 text-center text-slate-400">No hay calles cargadas.</p>
   }
 
+  // Parser robusto de rangos "1200-1300" o variantes, devuelve números para ordenar
+  const parseAddressRange = (rangeText: string): { start: number; end: number } => {
+    const matches = (rangeText.match(/\d+/g) || []).map((v) => Number(v))
+    if (matches.length === 0) return { start: Number.NaN, end: Number.NaN }
+    if (matches.length === 1) return { start: matches[0], end: matches[0] }
+    const start = Math.min(matches[0], matches[1])
+    const end = Math.max(matches[0], matches[1])
+    return { start, end }
+  }
+
   return (
     <div className="bg-slate-800 shadow-xl rounded-lg p-0 overflow-hidden">
       <Table className="min-w-full">
@@ -106,7 +116,18 @@ export default function StreetSectionView({ streets }: StreetSectionViewProps) {
                               </TableRow>
                             </TableHeader>
                             <TableBody>
-                              {Object.entries(sectionsByRange).map(([range, sectionsInRange]) => {
+                              {Object.entries(sectionsByRange)
+                                .sort((a, b) => {
+                                  const A = parseAddressRange(a[0])
+                                  const B = parseAddressRange(b[0])
+                                  if (!Number.isNaN(A.start) && !Number.isNaN(B.start)) {
+                                    if (A.start !== B.start) return A.start - B.start
+                                    if (!Number.isNaN(A.end) && !Number.isNaN(B.end)) return A.end - B.end
+                                  }
+                                  // Fallback estable por texto con comparación numérica
+                                  return a[0].localeCompare(b[0], 'es', { numeric: true })
+                                })
+                                .map(([range, sectionsInRange]) => {
                                 let countSideA = 0 // Norte o Este
                                 let countSideB = 0 // Sur u Oeste
                                 let totalCount = 0

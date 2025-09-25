@@ -77,6 +77,20 @@ const TaskRow = memo(({
         <TableCell className="text-slate-300 py-3 px-4">{task.assignedWorkerName}</TableCell>
         <TableCell className="text-slate-300 py-3 px-4">{task.startDate}</TableCell>
         <TableCell className="text-slate-300 py-3 px-4">{task.endDate || "N/A"}</TableCell>
+        <TableCell className="text-slate-300 py-3 px-4">
+          {(() => {
+            const last = new Date(task.endDate || task.startDate)
+            const now = new Date()
+            const diffMs = now.getTime() - last.getTime()
+            const days = Math.floor(diffMs / (1000 * 60 * 60 * 24))
+            const overdue = days >= 15 && task.status !== 'en proceso'
+            return overdue ? (
+              <span className="text-red-400 font-semibold">Inactivo {days} días</span>
+            ) : (
+              <span className="text-slate-400">—</span>
+            )
+          })()}
+        </TableCell>
         <TableCell className="py-3 px-4 space-x-2" onClick={(e) => e.stopPropagation()}>
           <Button size="sm" variant="outline" onClick={handleEdit}>Editar</Button>
           {canStart && (
@@ -130,6 +144,7 @@ function TasksExpandableList({ tasks, autoExpandTaskId, onEdit, onDelete, onFini
             <TableHead className="text-slate-300">Trabajador</TableHead>
             <TableHead className="text-slate-300">Inicio</TableHead>
             <TableHead className="text-slate-300">Fin</TableHead>
+            <TableHead className="text-slate-300">Alerta</TableHead>
             <TableHead className="text-slate-300">Acciones</TableHead>
           </TableRow>
         </TableHeader>

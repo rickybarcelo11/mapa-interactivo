@@ -92,15 +92,12 @@ function TasksFilters({ workers, sectors, onFilterChange, allTasks }: TasksFilte
     onFilterChange(filtered)
   }, [text, status, type, sectorId, workerId, dateRange, allTasks, onFilterChange])
 
-  const dateRangeText = useMemo(() => {
-    if (dateRange?.from) {
-      if (dateRange.to) {
-        return `${format(dateRange.from, "LLL dd, y", { locale: es })} - ${format(dateRange.to, "LLL dd, y", { locale: es })}`
-      }
-      return format(dateRange.from, "LLL dd, y", { locale: es })
-    }
-    return "Rango de fechas"
-  }, [dateRange])
+  const fromText = useMemo(() => (
+    dateRange?.from ? format(dateRange.from, "LLL dd, y", { locale: es }) : "Desde"
+  ), [dateRange?.from])
+  const toText = useMemo(() => (
+    dateRange?.to ? format(dateRange.to, "LLL dd, y", { locale: es }) : "Hasta"
+  ), [dateRange?.to])
 
   return (
     <div className="p-4 bg-slate-800 rounded-lg shadow-md space-y-4">
@@ -158,20 +155,48 @@ function TasksFilters({ workers, sectors, onFilterChange, allTasks }: TasksFilte
             ))}
           </SelectContent>
         </Select>
-        <Popover>
-          <PopoverTrigger asChild>
-            <Button
-              variant="outline"
-              className="w-full justify-start text-left font-normal bg-slate-700 border-slate-600 text-slate-50 hover:bg-slate-600 hover:text-slate-50"
-            >
-              <CalendarIcon className="mr-2 h-4 w-4" />
-              {dateRangeText}
-            </Button>
-          </PopoverTrigger>
-          <PopoverContent className="w-auto p-0 bg-slate-800 border-slate-700" align="start">
-            <Calendar mode="range" selected={dateRange} onSelect={handleDateRangeChange} numberOfMonths={2} locale={es} />
-          </PopoverContent>
-        </Popover>
+        <div className="grid grid-cols-2 gap-2">
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button
+                variant="outline"
+                className="w-full justify-start text-left font-normal bg-slate-700 border-slate-600 text-slate-50 hover:bg-slate-600 hover:text-slate-50"
+              >
+                <CalendarIcon className="mr-2 h-4 w-4" />
+                {fromText}
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-auto p-0 bg-slate-800 border-slate-700" align="start">
+              <Calendar
+                mode="single"
+                selected={dateRange?.from}
+                onSelect={(d) => setDateRange((prev) => ({ from: d || undefined, to: prev?.to }))}
+                numberOfMonths={1}
+                locale={es}
+              />
+            </PopoverContent>
+          </Popover>
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button
+                variant="outline"
+                className="w-full justify-start text-left font-normal bg-slate-700 border-slate-600 text-slate-50 hover:bg-slate-600 hover:text-slate-50"
+              >
+                <CalendarIcon className="mr-2 h-4 w-4" />
+                {toText}
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-auto p-0 bg-slate-800 border-slate-700" align="start">
+              <Calendar
+                mode="single"
+                selected={dateRange?.to}
+                onSelect={(d) => setDateRange((prev) => ({ from: prev?.from, to: d || undefined }))}
+                numberOfMonths={1}
+                locale={es}
+              />
+            </PopoverContent>
+          </Popover>
+        </div>
         <Button
           variant="ghost"
           onClick={clearFilters}

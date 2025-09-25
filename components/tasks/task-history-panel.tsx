@@ -21,7 +21,7 @@ interface CycleItem {
 
 export default function TaskHistoryPanel({ task }: TaskHistoryPanelProps) {
   const [history, setHistory] = useState<RawHistory[]>([])
-  const [olderCyclesOpen, setOlderCyclesOpen] = useState(false)
+  const [olderCyclesOpen, setOlderCyclesOpen] = useState(true)
 
   useEffect(() => {
     let mounted = true
@@ -102,8 +102,17 @@ export default function TaskHistoryPanel({ task }: TaskHistoryPanelProps) {
           <p className="text-slate-400">Sin historial disponible.</p>
         ) : (
           <div className="space-y-3">
-            {/* Mostrar el último ciclo al principio y plegar el resto */}
-            {cycles.slice(0, 1).map((c) => (
+            {/* Siempre mostramos todos los ciclos; el último primero */}
+            <div className="flex items-center justify-between">
+              <div className="text-sm text-slate-400">Total de ciclos: {cycles.length}</div>
+              <button
+                className="text-sky-400 text-sm hover:text-sky-300"
+                onClick={() => setOlderCyclesOpen((v) => !v)}
+              >
+                {olderCyclesOpen ? 'Compactar historial' : 'Expandir historial'}
+              </button>
+            </div>
+            {(olderCyclesOpen ? cycles : cycles.slice(0, 1)).map((c) => (
               <div key={c.id} className="rounded-md border border-slate-700 bg-slate-900/40 p-3">
                 <div className="flex flex-wrap gap-4 text-xs text-slate-300">
                   <div>
@@ -131,48 +140,6 @@ export default function TaskHistoryPanel({ task }: TaskHistoryPanelProps) {
                 )}
               </div>
             ))}
-            {cycles.length > 1 && (
-              <div>
-                <button
-                  className="text-sky-400 text-sm hover:text-sky-300"
-                  onClick={() => setOlderCyclesOpen((v) => !v)}
-                >
-                  {olderCyclesOpen ? 'Ocultar ciclos anteriores' : `Ver ciclos anteriores (${cycles.length - 1})`}
-                </button>
-                {olderCyclesOpen && (
-                  <div className="mt-3 space-y-3">
-                    {cycles.slice(1).map((c) => (
-                      <div key={c.id} className="rounded-md border border-slate-700 bg-slate-900/40 p-3">
-                        <div className="flex flex-wrap gap-4 text-xs text-slate-300">
-                          <div>
-                            <span className="text-slate-400">Inicio:</span> {c.startAt}
-                          </div>
-                          {c.endAt && (
-                            <div>
-                              <span className="text-slate-400">Fin:</span> {c.endAt}
-                            </div>
-                          )}
-                        </div>
-                        {(c.worker || c.observations) && (
-                          <div className="mt-2 grid grid-cols-1 sm:grid-cols-2 gap-2 text-sm">
-                            {c.worker && (
-                              <div>
-                                <span className="text-slate-400">Empleado:</span> {c.worker}
-                              </div>
-                            )}
-                            {c.observations && (
-                              <div>
-                                <span className="text-slate-400">Observaciones:</span> {c.observations}
-                              </div>
-                            )}
-                          </div>
-                        )}
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-            )}
           </div>
         )}
       </CardContent>

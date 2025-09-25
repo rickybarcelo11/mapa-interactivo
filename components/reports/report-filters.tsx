@@ -39,31 +39,48 @@ export default function ReportFilters({
   return (
     <div className="p-4 bg-slate-800 rounded-lg shadow-md space-y-4">
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 items-end">
-        <Popover>
-          <PopoverTrigger asChild>
-            <Button
-              variant="outline"
-              className="w-full justify-start text-left font-normal bg-slate-700 border-slate-600 text-slate-50 hover:bg-slate-600 hover:text-slate-50"
-            >
-              <CalendarIcon className="mr-2 h-4 w-4" />
-              {dateRange?.from ? (
-                dateRange.to ? (
-                  <>
-                    {format(dateRange.from, "LLL dd, y", { locale: es })} -{" "}
-                    {format(dateRange.to, "LLL dd, y", { locale: es })}
-                  </>
-                ) : (
-                  format(dateRange.from, "LLL dd, y", { locale: es })
-                )
-              ) : (
-                <span>Rango de fechas</span>
-              )}
-            </Button>
-          </PopoverTrigger>
-          <PopoverContent className="w-auto p-0 bg-slate-800 border-slate-700" align="start">
-            <Calendar mode="range" selected={dateRange} onSelect={setDateRange} numberOfMonths={2} locale={es} />
-          </PopoverContent>
-        </Popover>
+        <div className="grid grid-cols-2 gap-2">
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button
+                variant="outline"
+                className="w-full justify-start text-left font-normal bg-slate-700 border-slate-600 text-slate-50 hover:bg-slate-600 hover:text-slate-50"
+              >
+                <CalendarIcon className="mr-2 h-4 w-4" />
+                {dateRange?.from ? format(dateRange.from, "LLL dd, y", { locale: es }) : "Desde"}
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-auto p-0 bg-slate-800 border-slate-700" align="start">
+              <Calendar
+                mode="single"
+                selected={dateRange?.from}
+                onSelect={(d) => setDateRange((prev) => ({ from: d || undefined, to: prev?.to }))}
+                numberOfMonths={1}
+                locale={es}
+              />
+            </PopoverContent>
+          </Popover>
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button
+                variant="outline"
+                className="w-full justify-start text-left font-normal bg-slate-700 border-slate-600 text-slate-50 hover:bg-slate-600 hover:text-slate-50"
+              >
+                <CalendarIcon className="mr-2 h-4 w-4" />
+                {dateRange?.to ? format(dateRange.to, "LLL dd, y", { locale: es }) : "Hasta"}
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-auto p-0 bg-slate-800 border-slate-700" align="start">
+              <Calendar
+                mode="single"
+                selected={dateRange?.to}
+                onSelect={(d) => setDateRange((prev) => ({ from: prev?.from, to: d || undefined }))}
+                numberOfMonths={1}
+                locale={es}
+              />
+            </PopoverContent>
+          </Popover>
+        </div>
 
         <Select value={taskType} onValueChange={setTaskType}>
           <SelectTrigger className="bg-slate-700 border-slate-600 text-slate-50">

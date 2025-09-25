@@ -1,6 +1,23 @@
 import type { ReportData } from "@/views/reports-view"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import type { JSX } from "react"
+import {
+  ChartContainer,
+  ChartLegend,
+  ChartLegendContent,
+  ChartTooltip,
+  ChartTooltipContent,
+} from "@/components/ui/chart"
+import {
+  Bar,
+  BarChart,
+  CartesianGrid,
+  XAxis,
+  YAxis,
+  PieChart,
+  Pie,
+  Cell,
+} from "recharts"
 
 interface ReportChartsProps {
   reportData: ReportData
@@ -23,43 +40,27 @@ export default function ReportCharts({ reportData }: ReportChartsProps) {
         </CardHeader>
         <CardContent>
           {totalStatusTasks > 0 ? (
-            <div className="w-full h-64 p-4 bg-slate-700 rounded">
-              <p className="text-sm text-slate-400 mb-2">Gráfico de Barras (Simulación)</p>
-              <svg
-                width="100%"
-                height="80%"
-                viewBox={`0 0 ${tasksByStatusForChart.length * 60} 100`}
-                preserveAspectRatio="none"
-              >
-                {tasksByStatusForChart.map((item, index) => {
-                  const barHeight = item.value > 0 ? (item.value / totalStatusTasks) * 80 : 0
-                  return (
-                    <g key={item.name}>
-                      <rect
-                        x={index * 60 + 10}
-                        y={90 - barHeight}
-                        width="40"
-                        height={barHeight}
-                        fill={chartColors[index % chartColors.length]}
-                      />
-                      <text x={index * 60 + 30} y={90 - barHeight - 2} fill="#cbd5e1" textAnchor="middle" fontSize="10">
-                        {item.value}
-                      </text>
-                      <text
-                        x={index * 60 + 30}
-                        y="98"
-                        fill="#cbd5e1"
-                        textAnchor="middle"
-                        fontSize="10"
-                        className="capitalize"
-                      >
-                        {item.name}
-                      </text>
-                    </g>
-                  )
-                })}
-              </svg>
-            </div>
+            <ChartContainer
+              config={{
+                pendiente: { label: "Pendiente", color: chartColors[0] },
+                "en proceso": { label: "En Proceso", color: chartColors[1] },
+                completado: { label: "Completado", color: chartColors[2] },
+              }}
+              className="h-64 w-full"
+            >
+              <BarChart data={tasksByStatusForChart as any}>
+                <CartesianGrid vertical={false} stroke="#334155" />
+                <XAxis dataKey="name" tick={{ fill: "#cbd5e1" }} tickLine={false} axisLine={{ stroke: "#475569" }} />
+                <YAxis tick={{ fill: "#cbd5e1" }} tickLine={false} axisLine={{ stroke: "#475569" }} allowDecimals={false} />
+                <ChartTooltip cursor={{ fill: "#33415550" }} content={<ChartTooltipContent />} />
+                <Bar dataKey="value" radius={[6, 6, 0, 0]}>
+                  {tasksByStatusForChart.map((_, i) => (
+                    <Cell key={i} fill={chartColors[i % chartColors.length]} />
+                  ))}
+                </Bar>
+                <ChartLegend content={<ChartLegendContent nameKey="name" />} />
+              </BarChart>
+            </ChartContainer>
           ) : (
             <p className="text-slate-400">No hay datos para el gráfico de estado.</p>
           )}
@@ -72,56 +73,20 @@ export default function ReportCharts({ reportData }: ReportChartsProps) {
         </CardHeader>
         <CardContent>
           {totalTypeTasks > 0 ? (
-            <div className="w-full h-64 p-4 bg-slate-700 rounded flex flex-col items-center justify-center">
-              <p className="text-sm text-slate-400 mb-2">Gráfico de Torta (Simulación)</p>
-              <svg width="150" height="150" viewBox="0 0 36 36">
-                <circle
-                  cx="18"
-                  cy="18"
-                  r="15.91549430918954"
-                  fill="transparent"
-                  stroke="#475569"
-                  strokeWidth="3"
-                ></circle>
-                {
-                  tasksByTypeForChart.reduce(
-                    (acc, item, index, arr) => {
-                      const percentage = (item.value / totalTypeTasks) * 100
-                      const offset = acc.offset
-                      const dasharray = `${percentage} ${100 - percentage}`
-                      acc.elements.push(
-                        <circle
-                          key={item.name}
-                          cx="18"
-                          cy="18"
-                          r="15.91549430918954"
-                          fill="transparent"
-                          stroke={chartColors[index % chartColors.length]}
-                          strokeWidth="3.5"
-                          strokeDasharray={dasharray}
-                          strokeDashoffset={`-${offset}`}
-                          transform="rotate(-90 18 18)"
-                        />,
-                      )
-                      acc.offset += percentage
-                      return acc
-                    },
-                    { elements: [] as JSX.Element[], offset: 0 },
-                  ).elements
-                }
-              </svg>
-              <div className="mt-3 text-xs space-y-1">
-                {tasksByTypeForChart.map((item, index) => (
-                  <div key={item.name} className="flex items-center">
-                    <span
-                      className="w-3 h-3 rounded-full mr-2"
-                      style={{ backgroundColor: chartColors[index % chartColors.length] }}
-                    ></span>
-                    {item.name}: {item.value} ({((item.value / totalTypeTasks) * 100).toFixed(1)}%)
-                  </div>
-                ))}
-              </div>
-            </div>
+            <ChartContainer
+              config={{}}
+              className="h-64 w-full flex items-center justify-center"
+            >
+              <PieChart>
+                <Pie data={tasksByTypeForChart as any} dataKey="value" nameKey="name" innerRadius={50} outerRadius={80}>
+                  {tasksByTypeForChart.map((_, index) => (
+                    <Cell key={`cell-${index}`} fill={chartColors[index % chartColors.length]} />
+                  ))}
+                </Pie>
+                <ChartTooltip content={<ChartTooltipContent />} />
+                <ChartLegend content={<ChartLegendContent nameKey="name" />} />
+              </PieChart>
+            </ChartContainer>
           ) : (
             <p className="text-slate-400">No hay datos para el gráfico de tipo.</p>
           )}
