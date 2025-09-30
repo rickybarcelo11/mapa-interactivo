@@ -3,6 +3,7 @@
 import { useState, useCallback, useMemo, memo } from "react"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Badge } from "@/components/ui/badge"
+import { getSectorColor } from "@/src/utils/colors"
 import SectorRowDetails from "./sector-row-details"
 import type { SectorPolygon, SectorStatus } from "@/src/types"
 import { ChevronDown, ChevronRight } from "lucide-react"
@@ -56,16 +57,11 @@ const SectorRow = memo(({
   
   const badgeClassName = useMemo(() => {
     const baseClasses = "capitalize"
-    switch (sector.status) {
-      case "pendiente":
-        return `${baseClasses} bg-red-600 text-red-50`
-      case "en proceso":
-        return `${baseClasses} bg-yellow-500 text-yellow-950`
-      case "completado":
-        return `${baseClasses} bg-green-600 text-green-50`
-      default:
-        return baseClasses
-    }
+    const color = getSectorColor(sector.status)
+    // Derivar clases Tailwind aproximadas según el color
+    if (color === '#ef4444') return `${baseClasses} bg-red-600 text-red-50`
+    if (color === '#eab308') return `${baseClasses} bg-yellow-500 text-yellow-950`
+    return `${baseClasses} bg-green-600 text-green-50`
   }, [sector.status])
 
   return (

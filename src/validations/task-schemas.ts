@@ -1,4 +1,5 @@
 import { z } from 'zod'
+import { SECTOR_STATUSES } from '@/src/utils/status'
 
 // Esquema para fechas (formato ISO string)
 export const dateSchema = z.string()
@@ -18,7 +19,7 @@ export const taskSchema = z.object({
   type: z.string()
     .min(2, "El tipo de tarea debe tener al menos 2 caracteres")
     .max(100, "El tipo de tarea no puede exceder 100 caracteres"),
-  status: z.enum(["pendiente", "en proceso", "completado"], {
+  status: z.enum([...SECTOR_STATUSES] as ["pendiente", "en proceso", "completado"], {
     errorMap: () => ({ message: "El estado debe ser 'pendiente', 'en proceso' o 'completado'" })
   }),
   startDate: dateSchema,
@@ -43,7 +44,7 @@ export const updateTaskSchema = taskSchema.partial().extend({
 // Esquema para filtros de tareas
 export const taskFiltersSchema = z.object({
   text: z.string().optional(),
-  status: z.enum(["todos", "pendiente", "en proceso", "completado"]).optional(),
+  status: z.enum(["todos", ...SECTOR_STATUSES] as ["todos", "pendiente", "en proceso", "completado"]).optional(),
   type: z.enum(["todos"]).or(z.string()).optional(),
   sectorId: z.enum(["todos"]).or(z.string()).optional(),
   workerId: z.enum(["todos"]).or(z.string()).optional(),
@@ -57,7 +58,7 @@ export const taskFiltersSchema = z.object({
 export const taskFormSchema = z.object({
   sectorId: z.string().min(1, "Debe seleccionar un sector"),
   type: z.string().min(2, "El tipo de tarea debe tener al menos 2 caracteres"),
-  status: z.enum(["pendiente", "en proceso", "completado"], {
+  status: z.enum([...SECTOR_STATUSES] as ["pendiente", "en proceso", "completado"], {
     errorMap: () => ({ message: "Debe seleccionar un estado válido" })
   }),
   startDate: dateSchema,

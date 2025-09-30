@@ -6,14 +6,15 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Button } from "@/components/ui/button"
 import { X } from "lucide-react"
 import type { SectorFiltersState } from "@/views/sectors-view"
+import { SECTOR_TYPES, SECTOR_STATUSES } from "@/src/utils/status"
 
 interface SectorsFiltersProps {
   filters: SectorFiltersState
   onFilterChange: (newFilters: Partial<SectorFiltersState>) => void
 }
 
-const sectorTypes = ["todos", "Poda", "Corte de pasto"]
-const sectorStatuses = ["todos", "pendiente", "en proceso", "completado"]
+const sectorTypes = ["todos", ...SECTOR_TYPES]
+const sectorStatuses = ["todos", ...SECTOR_STATUSES]
 
 function SectorsFilters({ filters, onFilterChange }: SectorsFiltersProps) {
   const handleInputChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {

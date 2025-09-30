@@ -6,7 +6,8 @@ import ReportSummary from "@/components/reports/report-summary"
 import ReportCharts from "@/components/reports/report-charts"
 import ReportTasksTable from "@/components/reports/report-tasks-table"
 import { Button } from "@/components/ui/button"
-import { Download, FileText, FileSpreadsheet } from "lucide-react"
+import { exportTasks } from "@/src/utils/export"
+import { FileText, FileSpreadsheet } from "lucide-react"
 import type { Task, Worker, SectorPolygon, SectorStatus } from "@/src/types"
 import { getReport } from "@/src/services/provider"
 import { useNotifications } from "@/src/hooks"
@@ -84,8 +85,11 @@ export default function ReportsView() {
     })
   }, [])
 
-  const handleExport = (format: "PDF" | "Excel" | "CSV") => {
-    showSimulatedFeature(`Exportar informe como ${format}`)
+  const handleExport = async (format: "PDF" | "Excel") => {
+    if (!reportData) return
+    const tasks = reportData.filteredTasks
+    if (format === 'Excel') await exportTasks.xlsx('informe.xlsx', tasks)
+    if (format === 'PDF') await exportTasks.pdf('informe.pdf', tasks)
   }
 
   return (
@@ -120,13 +124,7 @@ export default function ReportsView() {
             >
               <FileSpreadsheet className="mr-2 h-5 w-5" /> Exportar Excel
             </Button>
-            <Button
-              variant="outline"
-              onClick={() => handleExport("CSV")}
-              className="border-slate-600 text-slate-300 hover:bg-slate-700"
-            >
-              <Download className="mr-2 h-5 w-5" /> Exportar CSV
-            </Button>
+            
           </div>
           <ReportTasksTable tasks={reportData.filteredTasks} />
         </div>

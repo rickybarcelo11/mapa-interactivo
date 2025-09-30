@@ -1,5 +1,6 @@
 import { prisma } from '../server/db/prisma'
 import { z } from 'zod'
+import { mapSectorStatusToUi, mapSectorStatusToDb } from '@/src/utils/status'
 import { createTaskSchema, updateTaskSchema, finishTaskSchema, startTaskSchema } from '../validations'
 
 const taskSchema = z.object({
@@ -17,11 +18,7 @@ const taskSchema = z.object({
 
 export type TaskDTO = z.infer<typeof taskSchema>
 
-function mapStatusToUi(status: string): TaskDTO['status'] {
-  if (status === 'en_proceso') return 'en proceso'
-  if (status === 'pendiente' || status === 'completado') return status
-  return 'pendiente'
-}
+function mapStatusToUi(status: string): TaskDTO['status'] { return mapSectorStatusToUi(status) }
 
 function toDateString(d: Date | null): string | null {
   if (!d) return null
@@ -85,7 +82,7 @@ export async function listTasksPage(params: ListTasksPageParams): Promise<Pagina
     })
   }
   if (params.status && params.status !== 'todos') {
-    andConditions.push({ status: params.status === 'en proceso' ? 'en_proceso' : params.status })
+    andConditions.push({ status: mapSectorStatusToDb(params.status) })
   }
   if (params.type && params.type !== 'todos') {
     andConditions.push({ type: params.type })
@@ -129,9 +126,7 @@ export async function listTasksPage(params: ListTasksPageParams): Promise<Pagina
   return { items, total, page, pageSize }
 }
 
-function mapStatusToDb(status: TaskDTO['status']): 'pendiente' | 'en_proceso' | 'completado' {
-  return status === 'en proceso' ? 'en_proceso' : status
-}
+function mapStatusToDb(status: TaskDTO['status']): 'pendiente' | 'en_proceso' | 'completado' { return mapSectorStatusToDb(status) }
 
 function toDate(d: string | null | undefined): Date | null | undefined {
   if (d === null || d === undefined) return d

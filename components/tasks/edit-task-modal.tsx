@@ -17,6 +17,7 @@ import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import type { Task, Worker } from "@/views/tasks-view"
 import type { SectorStatus } from "@/src/types"
+import { SECTOR_STATUSES } from "@/src/utils/status"
 import { useNotifications } from "@/src/hooks"
 import { validateTaskForm, validateTask } from "@/src/validations/task-schemas"
 
@@ -118,9 +119,9 @@ export default function EditTaskModal({ task, workers, isOpen, onOpenChange, onS
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent className="bg-slate-700 text-slate-50 border-slate-600">
-                  <SelectItem value="pendiente">Pendiente</SelectItem>
-                  <SelectItem value="en proceso">En Proceso</SelectItem>
-                  <SelectItem value="completado">Completado</SelectItem>
+                  {SECTOR_STATUSES.map((s) => (
+                    <SelectItem key={s} value={s} className="capitalize">{s}</SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
             </div>

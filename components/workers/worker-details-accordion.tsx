@@ -3,7 +3,9 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import type { Task, SectorStatus } from "@/views/tasks-view" // Ajusta la ruta si es necesario
+import type { Task } from "@/views/tasks-view" // Ajusta la ruta si es necesario
+import type { SectorStatus } from "@/src/types"
+import { getSectorColor } from "@/src/utils/colors"
 import { Eye } from "lucide-react"
 import { useNotifications } from "@/src/hooks"
 
@@ -54,10 +56,8 @@ export default function WorkerDetailsAccordion({ tasks, workerName }: WorkerDeta
                   <div className="flex items-center gap-2 mt-2 sm:mt-0">
                     <Badge
                       variant={statusBadgeVariant[task.status]}
-                      className={`capitalize 
-                      ${task.status === "pendiente" ? "bg-red-600 text-red-50" : ""}
-                      ${task.status === "en proceso" ? "bg-yellow-500 text-yellow-950" : ""}
-                      ${task.status === "completado" ? "bg-green-600 text-green-50" : ""}`}
+                      className={`capitalize`}
+                      style={{ backgroundColor: getSectorColor(task.status), color: task.status === 'en proceso' ? '#1a1a1a' : '#f8fafc' }}
                     >
                       {task.status}
                     </Badge>

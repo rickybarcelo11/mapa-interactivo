@@ -15,6 +15,7 @@ import {
 import { MoreHorizontal, Edit, Trash2, CheckCircle, Clock, AlertTriangle, History } from "lucide-react"
 import type { Task } from "@/views/tasks-view"
 import type { SectorStatus } from "@/src/types"
+import { getSectorColor } from "@/src/utils/colors"
 import ConfirmDeleteDialog from "./confirm-delete-dialog"
 import { useNotifications } from "@/src/hooks"
 
@@ -26,9 +27,9 @@ interface TasksTableProps {
 }
 
 const statusIcons: Record<SectorStatus, React.ReactElement> = {
-  pendiente: <AlertTriangle className="h-5 w-5 text-red-500" />,
-  "en proceso": <Clock className="h-5 w-5 text-yellow-500" />,
-  completado: <CheckCircle className="h-5 w-5 text-green-500" />,
+  pendiente: <AlertTriangle className="h-5 w-5" style={{ color: getSectorColor('pendiente') }} />,
+  "en proceso": <Clock className="h-5 w-5" style={{ color: getSectorColor('en proceso') }} />,
+  completado: <CheckCircle className="h-5 w-5" style={{ color: getSectorColor('completado') }} />,
 }
 
 export default function TasksTable({ tasks, onEdit, onDelete, onFinish }: TasksTableProps) {

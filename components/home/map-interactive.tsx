@@ -4,6 +4,8 @@ import { useState, useEffect, useRef, Fragment, useCallback, useMemo, memo } fro
 import { MapContainer, TileLayer, Polygon, useMap, useMapEvents, Marker, Polyline, Tooltip } from "react-leaflet"
 import "leaflet/dist/leaflet.css"
 import type { SectorPolygon } from "@/src/types"
+import { getSectorColor } from "@/src/utils/colors"
+import { toLatLngArray, createDrawingPointDivIcon } from "@/src/utils/leaflet"
 
 interface MapInteractiveProps {
   sectors: SectorPolygon[]
@@ -12,9 +14,7 @@ interface MapInteractiveProps {
   onDrawingComplete?: (path: { lat: number; lng: number }[]) => void
 }
 
-// Helper para convertir lat/lng a [lat, lng] para Leaflet
-const toLatLngArray = (path: { lat: number; lng: number }[]) =>
-  path.map((p) => [p.lat, p.lng] as [number, number])
+// Helpers movidos a utils/leaflet
 
 // Componente para manejar el dibujo
 const DrawingHandler = memo(({ isDrawingMode, onDrawingComplete }: { 
@@ -52,24 +52,7 @@ const DrawingHandler = memo(({ isDrawingMode, onDrawingComplete }: {
   }, [drawingPoints, isDrawingMode, onDrawingComplete])
 
   // Solo crea el icono si estamos en el cliente
-  const getMarkerIcon = useCallback(() => {
-    if (typeof window === "undefined") return undefined;
-    // Usar require para evitar SSR
-    const L = require("leaflet");
-    return L.divIcon({
-      className: 'drawing-point-marker',
-      html: `<div style="
-        width: 12px; 
-        height: 12px; 
-        background-color: #3b82f6; 
-        border: 2px solid white; 
-        border-radius: 50%; 
-        box-shadow: 0 2px 4px rgba(0,0,0,0.3);
-      "></div>`,
-      iconSize: [12, 12],
-      iconAnchor: [6, 6]
-    });
-  }, []);
+  const getMarkerIcon = useCallback(() => createDrawingPointDivIcon(), [])
 
   const memoizedDrawingPoints = useMemo(() => drawingPoints, [drawingPoints])
 
@@ -116,15 +99,10 @@ const SectorPolygon = memo(({
 
   const positions = useMemo(() => toLatLngArray(sector.path), [sector.path])
   
-  const pathOptions = useMemo(() => ({
-    color:
-      sector.status === "pendiente"
-        ? "#ef4444"
-        : sector.status === "en proceso"
-        ? "#eab308"
-        : "#22c55e",
-    fillOpacity: 0.5,
-  }), [sector.status])
+  const pathOptions = useMemo(() => {
+    const strokeColor = getSectorColor(sector.status)
+    return { color: strokeColor, fillColor: strokeColor, fillOpacity: 0.5 }
+  }, [sector.status])
 
   return (
     <Fragment key={sector.id}>
@@ -231,7 +209,7 @@ function MapInteractive({
         />
         {memoizedSectors.map((sector) => (
           <SectorPolygon
-            key={sector.id}
+            key={`${sector.id}-${sector.status}`}
             sector={sector}
             onPolygonClick={onPolygonClick}
           />
@@ -251,23 +229,7 @@ function MapInteractive({
             />
             {/* Marcadores de los puntos dibujados */}
             {drawingPoints.map((point, index) => {
-              const getMarkerIcon = () => {
-                if (typeof window === "undefined") return undefined;
-                const L = require("leaflet");
-                return L.divIcon({
-                  className: 'drawing-point-marker',
-                  html: `<div style="
-                    width: 12px; 
-                    height: 12px; 
-                    background-color: #3b82f6; 
-                    border: 2px solid white; 
-                    border-radius: 50%; 
-                    box-shadow: 0 2px 4px rgba(0,0,0,0.3);
-                  "></div>`,
-                  iconSize: [12, 12],
-                  iconAnchor: [6, 6]
-                });
-              };
+              const getMarkerIcon = () => createDrawingPointDivIcon();
               return (
                 <Marker
                   key={`drawing-point-${index}`}

@@ -16,6 +16,7 @@ import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import type { SectorStatus, SectorType } from "@/src/types"
+import { SECTOR_TYPES, SECTOR_STATUSES } from "@/src/utils/status"
 import { useSectorValidation } from "@/src/hooks"
 
 interface NewSectorFormDialogProps {
@@ -100,12 +101,11 @@ export default function NewSectorFormDialog({ isOpen, onOpenChange, onSubmit }: 
                     <SelectValue placeholder="Selecciona un tipo" />
                   </SelectTrigger>
                   <SelectContent className="bg-slate-700 text-slate-50 border-slate-600">
-                    <SelectItem value="Poda" className="hover:bg-slate-600">
-                      Poda
-                    </SelectItem>
-                    <SelectItem value="Corte de pasto" className="hover:bg-slate-600">
-                      Corte de pasto
-                    </SelectItem>
+                    {SECTOR_TYPES.map((t) => (
+                      <SelectItem key={t} value={t} className="hover:bg-slate-600">
+                        {t}
+                      </SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
               </div>
@@ -122,15 +122,11 @@ export default function NewSectorFormDialog({ isOpen, onOpenChange, onSubmit }: 
                     <SelectValue placeholder="Selecciona un estado" />
                   </SelectTrigger>
                   <SelectContent className="bg-slate-700 text-slate-50 border-slate-600">
-                    <SelectItem value="pendiente" className="hover:bg-slate-600">
-                      Pendiente
-                    </SelectItem>
-                    <SelectItem value="en proceso" className="hover:bg-slate-600">
-                      En Proceso
-                    </SelectItem>
-                    <SelectItem value="completado" className="hover:bg-slate-600">
-                      Completado
-                    </SelectItem>
+                    {SECTOR_STATUSES.map((s) => (
+                      <SelectItem key={s} value={s} className="hover:bg-slate-600 capitalize">
+                        {s}
+                      </SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
               </div>

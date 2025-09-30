@@ -10,6 +10,7 @@ import { format } from "date-fns"
 import { es } from "date-fns/locale"
 import type { DateRange } from "react-day-picker"
 import type { Task, Worker } from "@/src/types"
+import { SECTOR_TYPES, SECTOR_STATUSES } from "@/src/utils/status"
 
 interface TasksFiltersProps {
   workers: Worker[]
@@ -114,9 +115,9 @@ function TasksFilters({ workers, sectors, onFilterChange, allTasks }: TasksFilte
           </SelectTrigger>
           <SelectContent className="bg-slate-700 text-slate-50 border-slate-600">
             <SelectItem value="todos">Todos los Estados</SelectItem>
-            <SelectItem value="pendiente">Pendiente</SelectItem>
-            <SelectItem value="en proceso">En Proceso</SelectItem>
-            <SelectItem value="completado">Completado</SelectItem>
+            {SECTOR_STATUSES.map((s) => (
+              <SelectItem key={s} value={s} className="capitalize">{s}</SelectItem>
+            ))}
           </SelectContent>
         </Select>
         <Select value={type} onValueChange={handleTypeChange}>
@@ -125,8 +126,9 @@ function TasksFilters({ workers, sectors, onFilterChange, allTasks }: TasksFilte
           </SelectTrigger>
           <SelectContent className="bg-slate-700 text-slate-50 border-slate-600">
             <SelectItem value="todos">Todos los Tipos</SelectItem>
-            <SelectItem value="Poda">Poda</SelectItem>
-            <SelectItem value="Corte de pasto">Corte de pasto</SelectItem>
+            {SECTOR_TYPES.map((t) => (
+              <SelectItem key={t} value={t}>{t}</SelectItem>
+            ))}
           </SelectContent>
         </Select>
         <Select value={sectorId} onValueChange={handleSectorChange}>

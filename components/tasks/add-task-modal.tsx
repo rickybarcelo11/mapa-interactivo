@@ -14,6 +14,7 @@ import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import type { Worker, Task } from "@/src/types"
+import { SECTOR_TYPES, SECTOR_STATUSES } from "@/src/utils/status"
 import { useNotifications } from "@/src/hooks"
 
 type NewTaskPayload = Omit<Task, 'id' | 'endDate'> & { endDate?: string | null }
@@ -106,8 +107,9 @@ export default function AddTaskModal({ isOpen, onOpenChange, sectors, workers, p
                 <SelectValue />
               </SelectTrigger>
               <SelectContent className="bg-slate-700 text-slate-50 border-slate-600">
-                <SelectItem value="Poda">Poda</SelectItem>
-                <SelectItem value="Corte de pasto">Corte de pasto</SelectItem>
+                {SECTOR_TYPES.map((t) => (
+                  <SelectItem key={t} value={t}>{t}</SelectItem>
+                ))}
               </SelectContent>
             </Select>
           </div>
@@ -118,8 +120,9 @@ export default function AddTaskModal({ isOpen, onOpenChange, sectors, workers, p
                 <SelectValue />
               </SelectTrigger>
               <SelectContent className="bg-slate-700 text-slate-50 border-slate-600">
-                <SelectItem value="pendiente">Pendiente</SelectItem>
-                <SelectItem value="en proceso">Iniciar ahora</SelectItem>
+                {SECTOR_STATUSES.filter(s => s !== 'completado').map((s) => (
+                  <SelectItem key={s} value={s} className="capitalize">{s === 'en proceso' ? 'Iniciar ahora' : s}</SelectItem>
+                ))}
               </SelectContent>
             </Select>
           </div>

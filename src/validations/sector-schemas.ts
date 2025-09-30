@@ -1,4 +1,5 @@
 import { z } from 'zod'
+import { SECTOR_TYPES, SECTOR_STATUSES } from '@/src/utils/status'
 
 // Esquema base para coordenadas geográficas
 export const coordinateSchema = z.object({
@@ -13,10 +14,10 @@ export const sectorPolygonSchema = z.object({
     .min(2, "El nombre debe tener al menos 2 caracteres")
     .max(100, "El nombre no puede exceder 100 caracteres")
     .regex(/^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s\d\-\.]+$/, "El nombre solo puede contener letras, números, espacios, guiones y puntos"),
-  type: z.enum(["Poda", "Corte de pasto"], {
+  type: z.enum([...SECTOR_TYPES] as ["Poda", "Corte de pasto"], {
     errorMap: () => ({ message: "El tipo debe ser 'Poda' o 'Corte de pasto'" })
   }),
-  status: z.enum(["pendiente", "en proceso", "completado"], {
+  status: z.enum([...SECTOR_STATUSES] as ["pendiente", "en proceso", "completado"], {
     errorMap: () => ({ message: "El estado debe ser 'pendiente', 'en proceso' o 'completado'" })
   }),
   path: z.array(coordinateSchema)
@@ -41,8 +42,8 @@ export const updateSectorSchema = sectorPolygonSchema.partial().extend({
 // Esquema para filtros de sectores
 export const sectorFiltersSchema = z.object({
   name: z.string().optional(),
-  type: z.enum(["todos", "Poda", "Corte de pasto"]).optional(),
-  status: z.enum(["todos", "pendiente", "en proceso", "completado"]).optional(),
+  type: z.enum(["todos", ...SECTOR_TYPES] as ["todos", "Poda", "Corte de pasto"]).optional(),
+  status: z.enum(["todos", ...SECTOR_STATUSES] as ["todos", "pendiente", "en proceso", "completado"]).optional(),
   direccion: z.string().optional()
 })
 
@@ -52,10 +53,10 @@ export const sectorFormSchema = z.object({
     .min(2, "El nombre debe tener al menos 2 caracteres")
     .max(100, "El nombre no puede exceder 100 caracteres")
     .regex(/^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s\d\-\.]+$/, "El nombre solo puede contener letras, números, espacios, guiones y puntos"),
-  type: z.enum(["Poda", "Corte de pasto"], {
+  type: z.enum([...SECTOR_TYPES] as ["Poda", "Corte de pasto"], {
     errorMap: () => ({ message: "El tipo debe ser 'Poda' o 'Corte de pasto'" })
   }),
-  status: z.enum(["pendiente", "en proceso", "completado"], {
+  status: z.enum([...SECTOR_STATUSES] as ["pendiente", "en proceso", "completado"], {
     errorMap: () => ({ message: "El estado debe ser 'pendiente', 'en proceso' o 'completado'" })
   }),
   direccion: z.string()

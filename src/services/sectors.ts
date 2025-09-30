@@ -1,6 +1,7 @@
 import { prisma } from '../server/db/prisma'
 import { z } from 'zod'
 import { createSectorSchema, updateSectorSchema } from '../validations'
+import { mapSectorStatusToUi, mapSectorStatusToDb, mapSectorTypeToUi, mapSectorTypeToDb } from '@/src/utils/status'
 
 const coordinateSchema = z.object({ lat: z.number(), lng: z.number() })
 const sectorSchema = z.object({
@@ -15,15 +16,8 @@ const sectorSchema = z.object({
 
 export type SectorDTO = z.infer<typeof sectorSchema>
 
-function mapStatusToUi(status: string): SectorDTO['status'] {
-  if (status === 'en_proceso') return 'en proceso'
-  if (status === 'pendiente' || status === 'completado') return status
-  return 'pendiente'
-}
-
-function mapTypeToUi(type: string): SectorDTO['type'] {
-  return type === 'Corte_de_pasto' ? 'Corte de pasto' : 'Poda'
-}
+function mapStatusToUi(status: string): SectorDTO['status'] { return mapSectorStatusToUi(status) }
+function mapTypeToUi(type: string): SectorDTO['type'] { return mapSectorTypeToUi(type) }
 
 export async function listSectors(): Promise<SectorDTO[]> {
   const rows = await prisma.sector.findMany({ orderBy: { name: 'asc' } })
@@ -65,10 +59,10 @@ export async function listSectorsPage(params: ListSectorsPageParams): Promise<Pa
     where.name = { contains: params.name.trim(), mode: 'insensitive' }
   }
   if (params.type && params.type !== 'todos') {
-    where.type = mapTypeToDb(params.type)
+    where.type = mapSectorTypeToDb(params.type)
   }
   if (params.status && params.status !== 'todos') {
-    where.status = mapStatusToDb(params.status)
+    where.status = mapSectorStatusToDb(params.status)
   }
   if (params.direccion && params.direccion.trim() !== '') {
     where.direccion = { contains: params.direccion.trim(), mode: 'insensitive' }
@@ -95,13 +89,8 @@ export async function listSectorsPage(params: ListSectorsPageParams): Promise<Pa
   return { items, total, page, pageSize }
 }
 
-function mapStatusToDb(status: SectorDTO['status']): 'pendiente' | 'en_proceso' | 'completado' {
-  return status === 'en proceso' ? 'en_proceso' : status
-}
-
-function mapTypeToDb(type: SectorDTO['type']): 'Poda' | 'Corte_de_pasto' {
-  return type === 'Corte de pasto' ? 'Corte_de_pasto' : 'Poda'
-}
+function mapStatusToDb(status: SectorDTO['status']): 'pendiente' | 'en_proceso' | 'completado' { return mapSectorStatusToDb(status) }
+function mapTypeToDb(type: SectorDTO['type']): 'Poda' | 'Corte_de_pasto' { return mapSectorTypeToDb(type) }
 
 export async function createSector(input: unknown): Promise<SectorDTO> {
   const data = createSectorSchema.parse(input)

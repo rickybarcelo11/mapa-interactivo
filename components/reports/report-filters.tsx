@@ -10,6 +10,7 @@ import { format } from "date-fns"
 import { es } from "date-fns/locale"
 import type { DateRange } from "react-day-picker"
 import type { ReportFiltersState } from "@/views/reports-view"
+import { SECTOR_TYPES, SECTOR_STATUSES } from "@/src/utils/status"
 import type { Worker } from "@/src/types"
 import type { SectorPolygon } from "@/src/types"
 
@@ -88,8 +89,9 @@ export default function ReportFilters({
           </SelectTrigger>
           <SelectContent className="bg-slate-700 text-slate-50 border-slate-600">
             <SelectItem value="todos">Todos los Tipos</SelectItem>
-            <SelectItem value="Poda">Poda</SelectItem>
-            <SelectItem value="Corte de pasto">Corte de pasto</SelectItem>
+            {SECTOR_TYPES.map((t) => (
+              <SelectItem key={t} value={t}>{t}</SelectItem>
+            ))}
           </SelectContent>
         </Select>
 
@@ -99,9 +101,9 @@ export default function ReportFilters({
           </SelectTrigger>
           <SelectContent className="bg-slate-700 text-slate-50 border-slate-600">
             <SelectItem value="todos">Todos los Estados</SelectItem>
-            <SelectItem value="pendiente">Pendiente</SelectItem>
-            <SelectItem value="en proceso">En Proceso</SelectItem>
-            <SelectItem value="completado">Completado</SelectItem>
+            {SECTOR_STATUSES.map((s) => (
+              <SelectItem key={s} value={s} className="capitalize">{s}</SelectItem>
+            ))}
           </SelectContent>
         </Select>
 

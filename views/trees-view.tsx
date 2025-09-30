@@ -11,6 +11,7 @@ import ImportTreesModal from "@/components/trees/import-trees-modal"
 import ImportPreviewModal from "@/components/trees/import-preview-modal"
 import type { TreeSection, StreetWithSections, IndividualTree } from "@/src/types"
 import { useNotifications } from "@/src/hooks"
+import { exportToXLSX, exportToPDF } from "@/src/utils/export"
 
 // Datos desde API
 
@@ -20,6 +21,7 @@ export default function TreesView() {
   const [isAddModalOpen, setIsAddModalOpen] = useState(false)
   const [isImportOpen, setIsImportOpen] = useState(false)
   const [isPreviewOpen, setIsPreviewOpen] = useState(false)
+  const [activeTab, setActiveTab] = useState<"street-section" | "individual">("street-section")
   const { showTreeCreated, showSimulatedFeature } = useNotifications()
 
   useEffect(() => {
@@ -128,7 +130,59 @@ export default function TreesView() {
       console.error(e)
     }
   }
-  const handleExport = (format: "Excel" | "PDF") => showSimulatedFeature(`Exportar a ${format}`)
+  const handleExport = async (format: "Excel" | "PDF") => {
+    if (activeTab === 'individual') {
+      if (format === 'Excel') {
+        await exportToXLSX('arboles.xlsx', individualTrees, [
+          { header: 'Calle', accessor: (t) => t.streetName },
+          { header: 'Altura', accessor: (t) => t.streetNumber },
+          { header: 'Vereda', accessor: (t) => t.sidewalk ?? '' },
+          { header: 'Especie', accessor: (t) => t.species },
+          { header: 'Estado', accessor: (t) => t.status },
+          { header: 'Observación', accessor: (t) => t.observations ?? '' },
+        ])
+      } else {
+        await exportToPDF('arboles.pdf', 'Listado de Árboles', individualTrees, [
+          { header: 'Calle', accessor: (t) => t.streetName },
+          { header: 'Altura', accessor: (t) => t.streetNumber },
+          { header: 'Especie', accessor: (t) => t.species },
+          { header: 'Estado', accessor: (t) => t.status },
+        ])
+      }
+      return
+    }
+
+    // Exportación para vista por Calle/Tramo (secciones)
+    const rows = streets.flatMap((s) =>
+      (s.sections || []).map((sec) => ({
+        streetName: s.name,
+        addressRange: sec.addressRange,
+        sidewalkSide: sec.sidewalkSide,
+        predominantSpecies: sec.predominantSpecies,
+        treeCount: sec.treeCount,
+        generalStatus: sec.generalStatus,
+      }))
+    )
+    if (format === 'Excel') {
+      await exportToXLSX('calles-tramos.xlsx', rows, [
+        { header: 'Calle', accessor: (r: any) => r.streetName },
+        { header: 'Rango', accessor: (r: any) => r.addressRange },
+        { header: 'Lado', accessor: (r: any) => r.sidewalkSide },
+        { header: 'Especie predominante', accessor: (r: any) => r.predominantSpecies },
+        { header: 'Árboles', accessor: (r: any) => r.treeCount },
+        { header: 'Estado general', accessor: (r: any) => r.generalStatus },
+      ])
+    } else {
+      await exportToPDF('calles-tramos.pdf', 'Árboles por Calle/Tramo', rows, [
+        { header: 'Calle', accessor: (r: any) => r.streetName },
+        { header: 'Rango', accessor: (r: any) => r.addressRange },
+        { header: 'Lado', accessor: (r: any) => r.sidewalkSide },
+        { header: 'Especie', accessor: (r: any) => r.predominantSpecies },
+        { header: 'Árboles', accessor: (r: any) => r.treeCount },
+        { header: 'Estado', accessor: (r: any) => r.generalStatus },
+      ])
+    }
+  }
 
   return (
     <div className="space-y-6 p-1">
@@ -191,7 +245,7 @@ export default function TreesView() {
         </div>
       </div>
 
-      <Tabs defaultValue="street-section" className="w-full">
+      <Tabs defaultValue="street-section" value={activeTab} onValueChange={(v) => setActiveTab(v as any)} className="w-full">
         <TabsList className="grid w-full grid-cols-2 bg-slate-700">
           <TabsTrigger value="street-section" className="data-[state=active]:bg-sky-600 data-[state=active]:text-white">
             Vista por Calle/Tramo
