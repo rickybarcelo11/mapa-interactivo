@@ -17,12 +17,19 @@ Stack: Next.js (React) + API interna + Prisma + PostgreSQL (Neon) + Leaflet.
 
 ¿Qué hace?
 -Mapa interactivo con sectores coloreados por estado: pendiente, en proceso, completado.
+
 -Gestión de sectores (dibujo/edición de polígonos, datos y observaciones).
+
 -Gestión de tareas (alta, consulta, iniciar, finalizar, reasignar, historial).
+
 -Trabajadores (altas, bajas, modificaciones y tareas asignadas).
+
 -Árboles (inventario por calle y número; especie, estado y fechas).
+
 -Historial de tareas para auditoría.
+
 -Informes (tablas y resúmenes por período, sector, estado, responsable).
+
 -Se apoya en mapas abiertos (Leaflet + tiles), sin necesidad de Google Maps.
 
 ## 🧱 Arquitectura 
