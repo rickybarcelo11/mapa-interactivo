@@ -111,6 +111,7 @@ public/
 -Tareas: /api/tareas — GET/POST/PUT (consultar, crear, modificar, iniciar/finalizar según body).
 
 -Trabajadores: /api/workers — GET/POST/PUT/DELETE.
+
 -Árboles: /api/trees — GET/POST/PUT/DELETE.
 
 -Historial: usualmente como parte de /api/tareas (evento por cambio).
