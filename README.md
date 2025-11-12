@@ -107,12 +107,18 @@ public/
 
 ## 🧩 Endpoints (guía rápida)
 -Sectores: /api/sectores — GET (lista + filtros), POST (crear), PUT (editar), DELETE (borrar).
+
 -Tareas: /api/tareas — GET/POST/PUT (consultar, crear, modificar, iniciar/finalizar según body).
+
 -Trabajadores: /api/workers — GET/POST/PUT/DELETE.
 -Árboles: /api/trees — GET/POST/PUT/DELETE.
+
 -Historial: usualmente como parte de /api/tareas (evento por cambio).
+
 -Salud: /api/health (si está presente).
+
 -Algunos utilitarios pueden existir, p. ej.: /api/trees/preview, /api/trees/dedupe (según repo)
+
 
 ## 🗃️ Modelo de datos 
 -Sector: id, name, type, status, path(JSON), direccion?, observaciones?, createdAt, updatedAt
